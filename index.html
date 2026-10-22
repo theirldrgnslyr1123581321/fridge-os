@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fridge OS</title>
+<meta name="description" content="Live door timers and alarms for Smart Fridge OS">
+<meta name="theme-color" content="#0b1220">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+:root{
+  --bg:#f3f6fa; --card:#ffffff; --ink:#0d1726; --muted:#5d6b80; --line:#e2e8f0;
+  --ice:#2f8ee8; --ice-soft:#e3f0fd; --ok:#17a564; --ok-soft:#e3f6ec;
+  --warn:#d98a00; --warn-soft:#fff3dc; --bad:#e0383e; --bad-soft:#fde6e7;
+  --track:#e8edf3; --shadow:0 1px 2px rgba(13,23,38,.06),0 6px 20px rgba(13,23,38,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1220; --card:#121b2d; --ink:#e7edf6; --muted:#8c9ab0; --line:#1f2b42;
+    --ice:#5cb0ff; --ice-soft:#13263f; --ok:#34d07f; --ok-soft:#10291e;
+    --warn:#f5b13a; --warn-soft:#2c2210; --bad:#ff5a5f; --bad-soft:#341417;
+    --track:#1d2840; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1220; --card:#121b2d; --ink:#e7edf6; --muted:#8c9ab0; --line:#1f2b42;
+  --ice:#5cb0ff; --ice-soft:#13263f; --ok:#34d07f; --ok-soft:#10291e;
+  --warn:#f5b13a; --warn-soft:#2c2210; --bad:#ff5a5f; --bad-soft:#341417;
+  --track:#1d2840; --shadow:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  -webkit-tap-highlight-color:transparent;
+}
+.wrap{max-width:960px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand img{width:36px;height:36px;border-radius:9px}
+.brand h1{font-size:19px;margin:0;letter-spacing:-.01em}
+.brand small{display:block;color:var(--muted);font-size:12px;font-weight:500}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 10px;border-radius:99px;background:var(--card);border:1px solid var(--line);color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.chip.on .dot{background:var(--ok)} .chip.on{color:var(--ink)}
+.chip.off .dot{background:var(--bad)}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 14px;font-weight:600}
+button:active{transform:scale(.98)}
+button.primary{background:var(--ice);border-color:var(--ice);color:#fff}
+button.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+button:disabled{opacity:.45;cursor:not-allowed}
+.banner{display:none;align-items:center;gap:12px;justify-content:space-between;background:var(--bad-soft);border:1px solid var(--bad);color:var(--ink);border-radius:14px;padding:12px 14px;margin-bottom:14px}
+.banner.show{display:flex;animation:pulse 1.2s ease-in-out infinite}
+.banner b{color:var(--bad)}
+@keyframes pulse{50%{box-shadow:0 0 0 4px color-mix(in srgb,var(--bad) 25%,transparent)}}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
+.door-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.door-head h2{margin:0;font-size:16px}
+.door-head h2 span{color:var(--muted);font-weight:500;margin-left:6px;font-size:13px}
+.pill{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:4px 10px;border-radius:99px;background:var(--ok-soft);color:var(--ok)}
+.pill.open{background:var(--ice-soft);color:var(--ice)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.alarm{background:var(--bad-soft);color:var(--bad)}
+.pill.unknown{background:var(--track);color:var(--muted)}
+.gauge{position:relative;width:180px;height:180px;margin:6px auto 4px}
+.gauge svg{width:100%;height:100%;transform:rotate(-90deg)}
+.gauge .track{stroke:var(--track)}
+.gauge .bar{stroke:var(--ok);transition:stroke-dashoffset .3s linear,stroke .3s}
+.gauge .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.big{font-size:46px;font-weight:750;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+.big small{font-size:18px;font-weight:600;color:var(--muted);margin-left:2px}
+.sub{font-size:13px;color:var(--muted);margin-top:4px}
+.card.alarm .gauge .bar{animation:blink .6s steps(1) infinite}
+@keyframes blink{50%{opacity:.25}}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.stat{background:var(--bg);border-radius:12px;padding:8px 10px}
+.stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
+.stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.limit{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+.limit label{font-size:13px;color:var(--muted);font-weight:600;margin-right:auto}
+.stepper{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stepper button{border:0;border-radius:0;padding:8px 12px}
+.stepper input{width:46px;text-align:center;border:0;background:transparent;color:var(--ink);font:inherit;font-weight:700;font-variant-numeric:tabular-nums}
+.stepper input::-webkit-inner-spin-button{display:none}
+.section-title{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin:22px 4px 8px}
+.log{list-style:none;margin:0;padding:0;max-height:300px;overflow:auto}
+.log li{display:flex;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:14px}
+.log li:last-child{border:0}
+.log time{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px;min-width:62px;padding-top:2px}
+.log .tag{font-weight:700}
+.log .alarm{color:var(--bad)}
+.empty{color:var(--muted);font-size:14px;padding:8px 2px}
+.settings{display:grid;gap:12px}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+.field input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:10px}
+footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 10px}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(120px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;transition:transform .25s;z-index:9;max-width:calc(100% - 32px)}
+.toast:empty,.toast:not(.show){visibility:hidden}
+.toast.show{transform:translateX(-50%) translateY(0);visibility:visible}
+#installBtn{display:none}
+@media (max-width:420px){.big{font-size:40px}.gauge{width:160px;height:160px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <img src="icons/icon-192.png" alt="">
+      <div><h1>Fridge OS</h1><small id="devLabel">sfos-a7x29k</small></div>
+    </div>
+    <div class="chips">
+      <span class="chip" id="chipBroker"><i class="dot"></i>Cloud</span>
+      <span class="chip" id="chipDevice"><i class="dot"></i><span>Fridge</span></span>
+      <button id="installBtn" class="primary">Install app</button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner">
+    <div id="bannerText"><b>Door alarm</b></div>
+    <button class="danger" id="muteBtn">Mute</button>
+  </div>
+
+  <div class="grid" id="doors"></div>
+
+  <div class="section-title">Activity</div>
+  <div class="card"><ul class="log" id="log"></ul></div>
+
+  <div class="section-title">Settings</div>
+  <div class="card settings">
+    <div class="field">
+      <label for="devId">Device ID (same as in the ESP32 code)</label>
+      <input id="devId" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label for="broker">Broker (WebSocket URL)</label>
+      <input id="broker" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="row">
+      <button class="primary" id="saveSettings">Save &amp; reconnect</button>
+      <button id="notifBtn">Enable alerts</button>
+      <button id="resetBtn">Reset fridge stats</button>
+      <button id="clearLog">Clear activity</button>
+    </div>
+  </div>
+
+  <footer id="footer">Waiting for data…</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
+<script>
+(() => {
+  // ---------- settings ----------
+  const DEFAULTS = { devId: "sfos-a7x29k", broker: "wss://broker.hivemq.com:8884/mqtt" };
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+  };
+  let cfg = Object.assign({}, DEFAULTS, store.get("sfos.cfg", {}));
+  const DOOR_NAMES = { FR: "Fridge", FZ: "Freezer" };
+
+  // ---------- state ----------
+  let client = null, state = null, receivedAt = 0, deviceOnline = null, prev = null;
+  let events = store.get("sfos.log", []);
+  const editing = {};          // limit inputs the user is touching
+
+  const $ = id => document.getElementById(id);
+  const fmt = s => s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s/60)}m ${s%60}s` : `${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m`;
+  const toast = msg => { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2200); };
+
+  // ---------- door cards ----------
+  const R = 78, C = 2 * Math.PI * R;
+  function buildCard(tag) {
+    const el = document.createElement("section");
+    el.className = "card"; el.id = "door-" + tag;
+    el.innerHTML = `
+      <div class="door-head"><h2>${tag}<span>${DOOR_NAMES[tag] || ""}</span></h2><span class="pill unknown">—</span></div>
+      <div class="gauge">
+        <svg viewBox="0 0 180 180"><circle class="track" cx="90" cy="90" r="${R}" fill="none" stroke-width="12"/>
+        <circle class="bar" cx="90" cy="90" r="${R}" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg>
+        <div class="center"><div class="big">0<small>s</small></div><div class="sub">door closed</div></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><b data-k="n">0</b><span>Opens</span></div>
+        <div class="stat"><b data-k="tot">0s</b><span>Total open</span></div>
+        <div class="stat"><b data-k="avg">0s</b><span>Average</span></div>
+        <div class="stat"><b data-k="max">0s</b><span>Longest</span></div>
+        <div class="stat"><b data-k="ac">0</b><span>Alarms</span></div>
+        <div class="stat"><b data-k="l">–</b><span>Limit</span></div>
+      </div>
+      <div class="limit">
+        <label for="lim-${tag}">Alarm after</label>
+        <div class="stepper">
+          <button data-step="-1" aria-label="Less">−</button>
+          <input id="lim-${tag}" type="number" min="5" max="99" inputmode="numeric">
+          <button data-step="1" aria-label="More">+</button>
+        </div>
+        <button class="primary" data-save>Set</button>
+      </div>`;
+    const input = el.querySelector("input");
+    const clamp = v => Math.max(5, Math.min(99, Math.round(+v || 5)));
+    el.querySelectorAll("[data-step]").forEach(b => b.onclick = () => {
+      editing[tag] = true; input.value = clamp(+input.value + +b.dataset.step);
+    });
+    input.oninput = () => editing[tag] = true;
+    el.querySelector("[data-save]").onclick = () => {
+      const v = clamp(input.value); input.value = v;
+      if (send(`limit ${tag} ${v}`)) { toast(`${tag} limit set to ${v}s`); editing[tag] = false; }
+    };
+    $("doors").appendChild(el);
+    return el;
+  }
+
+  function renderDoor(d, liveSec) {
+    const el = $("door-" + d.t) || buildCard(d.t);
+    const frac = d.o ? Math.min(1, liveSec / d.l) : 0;
+    const color = d.a ? "var(--bad)" : frac >= .75 ? "var(--bad)" : frac >= .5 ? "var(--warn)" : "var(--ok)";
+    const bar = el.querySelector(".bar");
+    bar.style.strokeDashoffset = C * (1 - frac);
+    bar.style.stroke = color;
+    el.classList.toggle("alarm", !!(d.a && !d.m));
+
+    const pill = el.querySelector(".pill");
+    pill.className = "pill " + (!d.o ? "" : d.a ? "alarm" : frac >= .5 ? "warn" : "open");
+    pill.textContent = !d.o ? "Closed" : d.a ? (d.m ? "Muted" : "Alarm") : "Open";
+
+    el.querySelector(".big").innerHTML = `${d.o ? liveSec : 0}<small>s</small>`;
+    el.querySelector(".sub").textContent = !d.o ? "door closed"
+      : d.a ? `over the ${d.l}s limit` : `${Math.max(0, d.l - liveSec)}s until alarm`;
+
+    const tot = d.tot + (d.o ? liveSec - d.s : 0);
+    const set = (k, v) => el.querySelector(`[data-k="${k}"]`).textContent = v;
+    set("n", d.n); set("tot", fmt(Math.max(0, tot)));
+    set("avg", d.n ? fmt(Math.round(tot / d.n)) : "0s");
+    set("max", fmt(Math.max(d.max, d.o ? liveSec : 0)));
+    set("ac", d.ac); set("l", d.l + "s");
+    const input = el.querySelector("input");
+    if (!editing[d.t] && document.activeElement !== input) input.value = d.l;
+  }
+
+  function render() {
+    const age = state ? (Date.now() - receivedAt) / 1000 : Infinity;
+    const live = deviceOnline !== false && age < 6;
+    const dc = $("chipDevice");
+    dc.className = "chip " + (live ? "on" : "off");
+    dc.querySelector("span").textContent = live ? "Fridge online" : state ? "Fridge offline" : "Waiting for fridge";
+
+    if (!state) return;
+    const alarms = [];
+    state.doors.forEach(d => {
+      // count up smoothly between updates (max 3 s ahead)
+      const liveSec = d.o && live ? d.s + Math.min(3, Math.floor(age)) : d.s;
+      renderDoor(d, liveSec);
+      if (d.a && !d.m) alarms.push(`<b>${d.t}</b> open ${liveSec}s (limit ${d.l}s)`);
+    });
+    $("banner").classList.toggle("show", alarms.length > 0 && live);
+    $("bannerText").innerHTML = "⚠ " + alarms.join(" · ");
+    $("footer").textContent = live
+      ? `Fridge uptime ${fmt(state.up)} · WiFi ${state.rssi} dBm · updated ${age < 1.5 ? "just now" : Math.floor(age) + "s ago"}`
+      : `Last data ${fmt(Math.floor(age))} ago`;
+  }
+
+  // ---------- activity log ----------
+  function logEvent(tag, text, cls = "") {
+    events.unshift({ ts: Date.now(), tag, text, cls });
+    events = events.slice(0, 80);
+    store.set("sfos.log", events);
+    renderLog();
+  }
+  function renderLog() {
+    const ul = $("log");
+    if (!events.length) { ul.innerHTML = `<li class="empty">No door activity yet.</li>`; return; }
+    ul.innerHTML = events.map(e => {
+      const t = new Date(e.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      return `<li><time>${t}</time><span class="${e.cls}"><span class="tag">${e.tag}</span> ${e.text}</span></li>`;
+    }).join("");
+  }
+
+  function diff(next) {
+    if (!prev) return;
+    next.doors.forEach(d => {
+      const p = prev.doors.find(x => x.t === d.t);
+      if (!p) return;
+      if (!p.o && d.o) logEvent(d.t, "door opened");
+      if (p.o && !d.o) logEvent(d.t, `door closed after ${fmt(p.s)}`);
+      if (!p.a && d.a) { logEvent(d.t, `alarm! open longer than ${d.l}s`, "alarm"); notify(d); }
+      if (!p.m && d.m) logEvent(d.t, "alarm muted");
+      if (p.l !== d.l) logEvent(d.t, `limit changed to ${d.l}s`);
+    });
+  }
+
+  // ---------- notifications ----------
+  async function notify(d) {
+    if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    const title = `${DOOR_NAMES[d.t] || d.t} door open!`;
+    const opts = { body: `Open longer than ${d.l}s`, icon: "icons/icon-192.png", tag: "sfos-" + d.t, renotify: true };
+    try { const reg = await navigator.serviceWorker?.ready; reg ? reg.showNotification(title, opts) : new Notification(title, opts); } catch {}
+  }
+  function updateNotifBtn() {
+    const b = $("notifBtn");
+    if (!("Notification" in window)) { b.disabled = true; b.textContent = "Alerts not supported"; return; }
+    b.textContent = Notification.permission === "granted" ? "Alerts on ✓" : "Enable alerts";
+    b.disabled = Notification.permission !== "default";
+  }
+  $("notifBtn").onclick = async () => { await Notification.requestPermission(); updateNotifBtn(); };
+
+  // ---------- MQTT ----------
+  const topics = () => ({ state: `sfos/${cfg.devId}/state`, online: `sfos/${cfg.devId}/online`, cmd: `sfos/${cfg.devId}/cmd` });
+
+  function connect() {
+    if (client) { try { client.end(true); } catch {} }
+    state = null; prev = null; deviceOnline = null;
+    $("doors").innerHTML = "";
+    $("devLabel").textContent = cfg.devId;
+    const bc = $("chipBroker");
+    bc.className = "chip off";
+    if (typeof mqtt === "undefined") { toast("Can't load MQTT library — check internet"); return; }
+
+    client = mqtt.connect(cfg.broker, {
+      clientId: `${cfg.devId}-app-${Math.random().toString(16).slice(2, 8)}`,
+      reconnectPeriod: 3000, connectTimeout: 8000, clean: true
+    });
+    const t = topics();
+    client.on("connect", () => { bc.className = "chip on"; client.subscribe([t.state, t.online]); });
+    client.on("reconnect", () => bc.className = "chip");
+    client.on("close", () => bc.className = "chip off");
+    client.on("error", e => console.warn("MQTT", e));
+    client.on("message", (topic, buf) => {
+      const msg = buf.toString();
+      if (topic === t.online) { deviceOnline = msg === "1"; render(); return; }
+      if (topic === t.state) {
+        try {
+          const next = JSON.parse(msg);
+          diff(next);
+          state = next; prev = next; receivedAt = Date.now();
+          render();
+        } catch (e) { console.warn("bad state", e); }
+      }
+    });
+  }
+
+  function send(cmd) {
+    if (!client || !client.connected) { toast("Not connected"); return false; }
+    client.publish(topics().cmd, cmd);
+    return true;
+  }
+
+  // ---------- buttons ----------
+  $("muteBtn").onclick = () => send("mute") && toast("Alarm muted");
+  $("resetBtn").onclick = () => { if (confirm("Reset opens, totals and alarms on the fridge?")) send("reset") && toast("Stats reset"); };
+  $("clearLog").onclick = () => { events = []; store.set("sfos.log", events); renderLog(); };
+  $("devId").value = cfg.devId; $("broker").value = cfg.broker;
+  $("saveSettings").onclick = () => {
+    cfg = { devId: $("devId").value.trim() || DEFAULTS.devId, broker: $("broker").value.trim() || DEFAULTS.broker };
+    store.set("sfos.cfg", cfg); toast("Saved — reconnecting"); connect();
+  };
+
+  // ---------- install (PWA) ----------
+  let deferred = null;
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferred = e; $("installBtn").style.display = "inline-block"; });
+  $("installBtn").onclick = async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("installBtn").style.display = "none"; };
+  window.addEventListener("appinstalled", () => toast("Fridge OS installed"));
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(e => console.warn("SW", e));
+
+  updateNotifBtn(); renderLog(); connect();
+  setInterval(render, 250);
+})();
+</script>
+</body>
+</html>
