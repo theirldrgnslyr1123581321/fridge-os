@@ -80,6 +80,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .sub{font-size:13px;color:var(--muted);margin-top:4px}
 .card.alarm .gauge .bar{animation:blink .6s steps(1) infinite}
 @keyframes blink{50%{opacity:.25}}
+.stats-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:12px 2px -4px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
 .stat{background:var(--bg);border-radius:12px;padding:8px 10px}
 .stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
@@ -176,6 +177,7 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 10px}
 
   const $ = id => document.getElementById(id);
   const fmt = s => s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s/60)}m ${s%60}s` : `${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m`;
+  const clock = epoch => new Date(epoch * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   const toast = msg => { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2200); };
 
   // ---------- door cards ----------
@@ -190,6 +192,7 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 10px}
         <circle class="bar" cx="90" cy="90" r="${R}" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg>
         <div class="center"><div class="big">0<small>s</small></div><div class="sub">door closed</div></div>
       </div>
+      <div class="stats-label">Today</div>
       <div class="stats">
         <div class="stat"><b data-k="n">0</b><span>Opens</span></div>
         <div class="stat"><b data-k="tot">0s</b><span>Total open</span></div>
@@ -235,7 +238,7 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 10px}
     pill.textContent = !d.o ? "Closed" : d.a ? (d.m ? "Muted" : "Alarm") : "Open";
 
     el.querySelector(".big").innerHTML = `${d.o ? liveSec : 0}<small>s</small>`;
-    el.querySelector(".sub").textContent = !d.o ? "door closed"
+    el.querySelector(".sub").textContent = !d.o ? (d.lo ? `last opened ${clock(d.lo)}` : "door closed")
       : d.a ? `over the ${d.l}s limit` : `${Math.max(0, d.l - liveSec)}s until alarm`;
 
     const tot = d.tot + (d.o ? liveSec - d.s : 0);
@@ -266,7 +269,7 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 10px}
     $("banner").classList.toggle("show", alarms.length > 0 && live);
     $("bannerText").innerHTML = "⚠ " + alarms.join(" · ");
     $("footer").textContent = live
-      ? `Fridge uptime ${fmt(state.up)} · WiFi ${state.rssi} dBm · updated ${age < 1.5 ? "just now" : Math.floor(age) + "s ago"}`
+      ? `${state.ts ? "Fridge clock " + clock(state.ts + Math.floor(age)) + " · " : ""}Uptime ${fmt(state.up)} · WiFi ${state.rssi} dBm · updated ${age < 1.5 ? "just now" : Math.floor(age) + "s ago"}`
       : `Last data ${fmt(Math.floor(age))} ago`;
   }
 
