@@ -1,13 +1,13 @@
 // Fridge OS service worker: caches the app so it opens instantly and offline.
 // Live data still needs internet (MQTT over WebSocket isn't cached).
-const CACHE = "fridge-os-v1";
+const CACHE = "fridge-os-v2";
 const ASSETS = [
   "./",
   "index.html",
   "manifest.webmanifest",
-  "icons/icon-192.png",
-  "icons/icon-512.png",
-  "icons/icon-maskable-512.png",
+  "icon-192.png",
+  "icon-512.png",
+  "icon-maskable-512.png",
   "https://unpkg.com/mqtt@5/dist/mqtt.min.js"
 ];
 
