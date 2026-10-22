@@ -17,6 +17,7 @@
   --ice:#2f8ee8; --ice-soft:#e3f0fd; --ok:#17a564; --ok-soft:#e3f6ec;
   --warn:#d98a00; --warn-soft:#fff3dc; --bad:#e0383e; --bad-soft:#fde6e7;
   --track:#e8edf3; --shadow:0 1px 2px rgba(13,23,38,.06),0 6px 20px rgba(13,23,38,.05);
+  --fr:#2a78d6; --fz:#eb6834; --grid:#e6ebf1;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -24,6 +25,7 @@
     --ice:#5cb0ff; --ice-soft:#13263f; --ok:#34d07f; --ok-soft:#10291e;
     --warn:#f5b13a; --warn-soft:#2c2210; --bad:#ff5a5f; --bad-soft:#341417;
     --track:#1d2840; --shadow:none;
+    --fr:#3987e5; --fz:#d95926; --grid:#1c2740;
   }
 }
 :root[data-theme="dark"]{
@@ -31,6 +33,7 @@
   --ice:#5cb0ff; --ice-soft:#13263f; --ok:#34d07f; --ok-soft:#10291e;
   --warn:#f5b13a; --warn-soft:#2c2210; --bad:#ff5a5f; --bad-soft:#341417;
   --track:#1d2840; --shadow:none;
+  --fr:#3987e5; --fz:#d95926; --grid:#1c2740;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -109,6 +112,41 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 10px}
 .toast:empty,.toast:not(.show){visibility:hidden}
 .toast.show{transform:translateX(-50%) translateY(0);visibility:visible}
 #installBtn{display:none}
+.chart-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.chart-head h3{margin:0;font-size:15px}
+.muted{color:var(--muted);font-size:13px}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{fill:var(--muted);font-size:10px;font-family:inherit}
+.chart .gl{stroke:var(--grid);stroke-width:1}
+.chart .base{stroke:var(--line);stroke-width:1}
+.chart [data-tip]{cursor:pointer}
+.chart .hit{fill:transparent}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:0 0 6px;font-weight:600}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:6px 10px;font-size:13px;background:transparent;color:var(--muted)}
+.seg button.on{background:var(--ice-soft);color:var(--ice)}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;font-weight:600;padding:6px 9px;border-radius:8px;z-index:10;opacity:0;transition:opacity .1s;white-space:nowrap}
+.tip.show{opacity:1}
+.controls{display:grid;gap:14px}
+.ctl-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ctl-row b{display:block;font-size:15px}
+.ctl-row small{color:var(--muted);font-size:12px}
+.ctl-row label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);font-weight:600}
+select{font:inherit;font-weight:600;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--ice)}
+.switch{position:relative;width:46px;height:26px;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;background:var(--track);border-radius:99px;transition:.2s;cursor:pointer}
+.switch span:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.switch input:checked+span{background:var(--ice)}
+.switch input:checked+span:before{transform:translateX(20px)}
+.qpill{font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;background:var(--ice-soft);color:var(--ice);margin-left:6px;vertical-align:1px}
+.divider{border-top:1px solid var(--line)}
+.fw{display:grid;gap:10px;align-content:start}
+.fw small{color:var(--muted);font-size:12px}
+a.btn{display:inline-block;text-align:center;text-decoration:none;font-weight:600;border-radius:10px;padding:10px 14px;background:var(--ice);color:#fff}
+a.btn.disabled{opacity:.45;pointer-events:none}
 @media (max-width:420px){.big{font-size:40px}.gauge{width:160px;height:160px}}
 </style>
 </head>
@@ -132,6 +170,51 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 10px}
   </div>
 
   <div class="grid" id="doors"></div>
+
+  <div class="section-title">History</div>
+  <div class="grid">
+    <section class="card">
+      <div class="chart-head"><h3>Today by hour</h3><span class="muted" id="hourTotal"></span></div>
+      <div class="chart" id="hourChart" role="img" aria-label="Door opens per hour today"></div>
+    </section>
+    <section class="card">
+      <div class="chart-head">
+        <h3>Last 7 days</h3>
+        <div class="seg" id="weekSeg"><button data-m="opens" class="on">Opens</button><button data-m="time">Time open</button></div>
+      </div>
+      <div class="legend"><span><i style="background:var(--fr)"></i>FR Fridge</span><span><i style="background:var(--fz)"></i>FZ Freezer</span></div>
+      <div class="chart" id="weekChart" role="img" aria-label="Door opens per day, last 7 days"></div>
+    </section>
+  </div>
+
+  <div class="section-title">Controls</div>
+  <div class="grid">
+    <section class="card controls">
+      <div class="ctl-row">
+        <div><b>Quiet hours <span class="qpill" id="qNow" hidden>Quiet now</span></b><small>No buzzer in this window. Lights and screens still warn you.</small></div>
+        <label class="switch"><input type="checkbox" id="qOn" aria-label="Quiet hours on"><span></span></label>
+      </div>
+      <div class="ctl-row">
+        <label>From <select id="qStart"></select></label>
+        <label>to <select id="qEnd"></select></label>
+        <button class="primary" id="qSave">Save</button>
+      </div>
+      <div class="divider"></div>
+      <div class="ctl-row"><div><b>LED brightness</b><small id="brVal">–</small></div></div>
+      <input type="range" id="br" min="5" max="255" step="5" aria-label="LED brightness">
+      <div class="divider"></div>
+      <div class="row">
+        <button id="beepBtn">🔔 Beep fridge</button>
+        <button id="restartBtn">↻ Restart fridge</button>
+      </div>
+    </section>
+    <section class="card fw">
+      <div class="ctl-row"><div><b>Firmware</b><small id="fwInfo">waiting for fridge…</small></div></div>
+      <a class="btn disabled" id="fwLink" target="_blank" rel="noopener">Open update page</a>
+      <small>Upload new code over WiFi. Your phone must be on the <b>same WiFi</b> as the fridge. Login: <b>admin</b> / <b>fridgeota</b>.</small>
+      <small>In Arduino IDE: Sketch → Export Compiled Binary, then upload the <b>.ino.bin</b> file.</small>
+    </section>
+  </div>
 
   <div class="section-title">Activity</div>
   <div class="card"><ul class="log" id="log"></ul></div>
@@ -157,6 +240,7 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 10px}
   <footer id="footer">Waiting for data…</footer>
 </div>
 <div class="toast" id="toast"></div>
+<div class="tip" id="tip"></div>
 
 <script src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
 <script>
@@ -171,7 +255,8 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 10px}
   const DOOR_NAMES = { FR: "Fridge", FZ: "Freezer" };
 
   // ---------- state ----------
-  let client = null, state = null, receivedAt = 0, deviceOnline = null, prev = null;
+  let client = null, state = null, receivedAt = 0, deviceOnline = null, prev = null, hist = null;
+  let weekMode = "opens", chartSig = "", qDirty = false, brDragging = false;
   let events = store.get("sfos.log", []);
   const editing = {};          // limit inputs the user is touching
 
@@ -259,6 +344,8 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 10px}
     dc.querySelector("span").textContent = live ? "Fridge online" : state ? "Fridge offline" : "Waiting for fridge";
 
     if (!state) return;
+    renderControls();
+    renderCharts();
     const alarms = [];
     state.doors.forEach(d => {
       // count up smoothly between updates (max 3 s ahead)
@@ -300,6 +387,9 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 10px}
       if (!p.m && d.m) logEvent(d.t, "alarm muted");
       if (p.l !== d.l) logEvent(d.t, `limit changed to ${d.l}s`);
     });
+    if (prev.q && next.q && prev.q.join() !== next.q.join())
+      logEvent("⚙", next.q[0] ? `quiet hours ${h12(next.q[1])} – ${h12(next.q[2])}` : "quiet hours off");
+    if (prev.fw && next.fw && prev.fw !== next.fw) logEvent("⚙", `firmware updated to v${next.fw}`);
   }
 
   // ---------- notifications ----------
@@ -318,12 +408,156 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 10px}
   }
   $("notifBtn").onclick = async () => { await Notification.requestPermission(); updateNotifBtn(); };
 
+  // ---------- charts ----------
+  const h12 = h => `${h % 12 || 12} ${h < 12 ? "AM" : "PM"}`;
+  const esc = v => String(v).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  // bar with 4px rounded top, square on the baseline
+  function bar(x, y0, w, h, fill) {
+    if (h <= 0) return "";
+    const r = Math.min(4, w / 2, h), y = y0 - h;
+    return `<path fill="${fill}" d="M${x},${y0}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y0}Z"/>`;
+  }
+  function niceMax(v) {
+    if (v <= 4) return 4;
+    const p = Math.pow(10, Math.floor(Math.log10(v))), n = v / p;
+    return (n <= 2 ? 2 : n <= 5 ? 5 : 10) * p;
+  }
+  function gridLines(W, top, base, max, fmtV, left) {
+    let g = "";
+    for (let k = 1; k <= 2; k++) {
+      const v = max * k / 2, y = base - (base - top) * k / 2;
+      g += `<line class="gl" x1="${left}" x2="${W}" y1="${y}" y2="${y}"/><text x="${left - 4}" y="${y + 3}" text-anchor="end">${fmtV(v)}</text>`;
+    }
+    return g;
+  }
+
+  function renderCharts() {
+    const doors = state.doors || [];
+    const today = doors.map(d => [d.n, d.tot]);
+    const sig = JSON.stringify([hist, today, weekMode]);
+    if (sig === chartSig) return;
+    chartSig = sig;
+
+    // --- today by hour (both doors together)
+    const H = hist && hist.h ? hist.h : new Array(24).fill(0);
+    const nowH = new Date((state.ts || Date.now() / 1000) * 1000).getHours();
+    const W = 320, top = 8, base = 112, left = 22, bw = (W - left) / 24;
+    const hMax = niceMax(Math.max(...H, 1));
+    let svg = gridLines(W, top, base, hMax, v => v, left);
+    H.forEach((v, h) => {
+      const x = left + h * bw + 1.5, w = bw - 3, bh = (base - top) * v / hMax;
+      svg += bar(x, base, w, bh, "var(--fr)");
+      svg += `<rect class="hit" x="${left + h * bw}" y="${top}" width="${bw}" height="${base - top}" data-tip="${esc(h12(h))}–${esc(h12((h + 1) % 24))}: ${v} open${v === 1 ? "" : "s"}"/>`;
+      if (h === nowH) svg += `<rect x="${x}" y="${base + 3}" width="${w}" height="3" rx="1.5" fill="var(--ink)"/>`;
+    });
+    svg += `<line class="base" x1="${left}" x2="${W}" y1="${base}" y2="${base}"/>`;
+    [0, 6, 12, 18].forEach(h => svg += `<text x="${left + h * bw + bw / 2}" y="${base + 18}" text-anchor="middle">${h12(h).replace(" ", "")}</text>`);
+    $("hourChart").innerHTML = `<svg viewBox="0 0 ${W} ${base + 22}">${svg}</svg>`;
+    const total = H.reduce((a, b) => a + b, 0);
+    $("hourTotal").textContent = `${total} open${total === 1 ? "" : "s"} today`;
+
+    // --- last 7 days: 6 past days from the fridge's history + today live
+    const past = hist && hist.d ? hist.d.slice(0, 6).reverse() : new Array(6).fill([0, 0, 0, 0]);
+    const fr = doors.find(d => d.t === "FR") || { n: 0, tot: 0 }, fz = doors.find(d => d.t === "FZ") || { n: 0, tot: 0 };
+    const days = [...past, [fr.n, fz.n, fr.tot, fz.tot]];
+    const timeMode = weekMode === "time";
+    const val = (d, i) => timeMode ? d[2 + i] / 60 : d[i];      // minutes or opens
+    const fmtV = v => timeMode ? (v >= 60 ? `${Math.round(v / 6) / 10}h` : `${Math.round(v)}m`) : Math.round(v);
+    const wMax = niceMax(Math.max(...days.map(d => Math.max(val(d, 0), val(d, 1))), timeMode ? 1 : 1));
+    const gw = (W - left) / 7, bw2 = Math.min(16, (gw - 10) / 2);
+    const now = new Date((state.ts || Date.now() / 1000) * 1000);
+    let svg2 = gridLines(W, top, base, wMax, fmtV, left);
+    days.forEach((d, k) => {
+      const ago = 6 - k;
+      const date = new Date(now); date.setDate(now.getDate() - ago);
+      const label = ago === 0 ? "Today" : date.toLocaleDateString([], { weekday: "short" });
+      const cx = left + k * gw + gw / 2;
+      ["fr", "fz"].forEach((c, i) => {
+        const x = cx - bw2 - 1 + i * (bw2 + 2), v = val(d, i);
+        svg2 += bar(x, base, bw2, (base - top) * v / wMax, `var(--${c})`);
+      });
+      const tipTxt = timeMode
+        ? `${label}: FR ${fmt(d[2])} · FZ ${fmt(d[3])}`
+        : `${label}: FR ${d[0]} · FZ ${d[1]} opens`;
+      svg2 += `<rect class="hit" x="${left + k * gw}" y="${top}" width="${gw}" height="${base - top}" data-tip="${esc(tipTxt)}"/>`;
+      svg2 += `<text x="${cx}" y="${base + 18}" text-anchor="middle"${ago === 0 ? ' style="fill:var(--ink);font-weight:700"' : ""}>${esc(label)}</text>`;
+    });
+    svg2 += `<line class="base" x1="${left}" x2="${W}" y1="${base}" y2="${base}"/>`;
+    $("weekChart").innerHTML = `<svg viewBox="0 0 ${W} ${base + 22}">${svg2}</svg>`;
+  }
+
+  $("weekSeg").querySelectorAll("button").forEach(b => b.onclick = () => {
+    weekMode = b.dataset.m;
+    $("weekSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+    if (state) renderCharts();
+  });
+
+  // shared tooltip for both charts (hover on desktop, tap on phone)
+  const tip = $("tip");
+  function showTip(e) {
+    const el = e.target.closest("[data-tip]");
+    if (!el) { tip.classList.remove("show"); return; }
+    tip.textContent = el.dataset.tip;
+    tip.classList.add("show");
+    const r = tip.getBoundingClientRect();
+    let x = e.clientX - r.width / 2, y = e.clientY - r.height - 12;
+    x = Math.max(8, Math.min(window.innerWidth - r.width - 8, x));
+    if (y < 8) y = e.clientY + 16;
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+  }
+  ["hourChart", "weekChart"].forEach(id => {
+    $(id).addEventListener("pointermove", showTip);
+    $(id).addEventListener("pointerdown", showTip);
+    $(id).addEventListener("pointerleave", () => tip.classList.remove("show"));
+  });
+  document.addEventListener("scroll", () => tip.classList.remove("show"), { passive: true });
+
+  // ---------- controls ----------
+  for (let h = 0; h < 24; h++) {
+    $("qStart").add(new Option(h12(h), h));
+    $("qEnd").add(new Option(h12(h), h));
+  }
+  $("qStart").value = 21; $("qEnd").value = 6;
+  $("qStart").onchange = $("qEnd").onchange = () => qDirty = true;
+  $("qOn").onchange = () => {
+    if ($("qOn").checked) sendQuiet();
+    else if (send("quiet off")) { toast("Quiet hours off"); qDirty = false; }
+  };
+  function sendQuiet() {
+    const a = +$("qStart").value, b = +$("qEnd").value;
+    if (a === b) { toast("Start and end must be different"); return; }
+    if (send(`quiet ${a} ${b}`)) { toast(`Quiet ${h12(a)} – ${h12(b)}`); qDirty = false; $("qOn").checked = true; }
+  }
+  $("qSave").onclick = sendQuiet;
+
+  $("br").oninput = () => { brDragging = true; $("brVal").textContent = Math.round($("br").value / 2.55) + "%"; };
+  $("br").onchange = () => { brDragging = false; send(`bright ${$("br").value}`); };
+  $("beepBtn").onclick = () => send("beep") && toast("Beeping the fridge");
+  $("restartBtn").onclick = () => { if (confirm("Restart the fridge controller? It takes about 10 seconds.")) send("restart") && toast("Restarting fridge…"); };
+
+  function renderControls() {
+    if (state.q && !qDirty && document.activeElement?.tagName !== "SELECT") {
+      $("qOn").checked = !!state.q[0];
+      $("qStart").value = state.q[1]; $("qEnd").value = state.q[2];
+    }
+    $("qNow").hidden = !state.qn;
+    if (state.br != null && !brDragging && document.activeElement !== $("br")) {
+      $("br").value = state.br;
+      $("brVal").textContent = Math.round(state.br / 2.55) + "%";
+    }
+    if (state.fw) {
+      $("fwInfo").textContent = `v${state.fw}${state.ip ? " · " + state.ip : ""}`;
+      const link = $("fwLink");
+      if (state.ip && state.ip !== "0.0.0.0") { link.href = `http://${state.ip}/`; link.classList.remove("disabled"); }
+    }
+  }
+
   // ---------- MQTT ----------
-  const topics = () => ({ state: `sfos/${cfg.devId}/state`, online: `sfos/${cfg.devId}/online`, cmd: `sfos/${cfg.devId}/cmd` });
+  const topics = () => ({ state: `sfos/${cfg.devId}/state`, online: `sfos/${cfg.devId}/online`, cmd: `sfos/${cfg.devId}/cmd`, hist: `sfos/${cfg.devId}/hist` });
 
   function connect() {
     if (client) { try { client.end(true); } catch {} }
-    state = null; prev = null; deviceOnline = null;
+    state = null; prev = null; deviceOnline = null; hist = null; chartSig = "";
     $("doors").innerHTML = "";
     $("devLabel").textContent = cfg.devId;
     const bc = $("chipBroker");
@@ -335,13 +569,14 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 10px}
       reconnectPeriod: 3000, connectTimeout: 8000, clean: true
     });
     const t = topics();
-    client.on("connect", () => { bc.className = "chip on"; client.subscribe([t.state, t.online]); });
+    client.on("connect", () => { bc.className = "chip on"; client.subscribe([t.state, t.online, t.hist]); });
     client.on("reconnect", () => bc.className = "chip");
     client.on("close", () => bc.className = "chip off");
     client.on("error", e => console.warn("MQTT", e));
     client.on("message", (topic, buf) => {
       const msg = buf.toString();
       if (topic === t.online) { deviceOnline = msg === "1"; render(); return; }
+      if (topic === t.hist) { try { hist = JSON.parse(msg); chartSig = ""; render(); } catch (e) { console.warn("bad hist", e); } return; }
       if (topic === t.state) {
         try {
           const next = JSON.parse(msg);

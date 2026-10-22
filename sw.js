@@ -1,6 +1,6 @@
 // Fridge OS service worker: caches the app so it opens instantly and offline.
 // Live data still needs internet (MQTT over WebSocket isn't cached).
-const CACHE = "fridge-os-v3";
+const CACHE = "fridge-os-v4";
 const ASSETS = [
   "./",
   "index.html",
