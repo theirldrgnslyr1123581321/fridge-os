@@ -1,6 +1,6 @@
 // Fridge OS service worker: caches the app so it opens instantly and offline.
 // Live data still needs internet (MQTT over WebSocket isn't cached).
-const CACHE = "fridge-os-v4";
+const CACHE = "fridge-os-v5";
 const ASSETS = [
   "./",
   "index.html",
@@ -8,7 +8,8 @@ const ASSETS = [
   "icon-192.png",
   "icon-512.png",
   "icon-maskable-512.png",
-  "https://unpkg.com/mqtt@5/dist/mqtt.min.js"
+  "https://unpkg.com/mqtt@5/dist/mqtt.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"
 ];
 
 self.addEventListener("install", e => {

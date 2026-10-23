@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Fridge OS</title>
-<meta name="description" content="Live door timers and alarms for Smart Fridge OS">
+<meta name="description" content="Live door timers, alarms, shopping list and food expiry for Smart Fridge OS">
 <meta name="theme-color" content="#0b1220">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -15,34 +15,29 @@
 :root{
   --bg:#f3f6fa; --card:#ffffff; --ink:#0d1726; --muted:#5d6b80; --line:#e2e8f0;
   --ice:#2f8ee8; --ice-soft:#e3f0fd; --ok:#17a564; --ok-soft:#e3f6ec;
-  --warn:#d98a00; --warn-soft:#fff3dc; --bad:#e0383e; --bad-soft:#fde6e7;
+  --warn:#c27c00; --warn-soft:#fff3dc; --bad:#e0383e; --bad-soft:#fde6e7;
   --track:#e8edf3; --shadow:0 1px 2px rgba(13,23,38,.06),0 6px 20px rgba(13,23,38,.05);
-  --fr:#2a78d6; --fz:#eb6834; --grid:#e6ebf1;
+  --fr:#2a78d6; --fz:#eb6834; --grid:#e6ebf1; --nav:rgba(255,255,255,.92);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#0b1220; --card:#121b2d; --ink:#e7edf6; --muted:#8c9ab0; --line:#1f2b42;
     --ice:#5cb0ff; --ice-soft:#13263f; --ok:#34d07f; --ok-soft:#10291e;
     --warn:#f5b13a; --warn-soft:#2c2210; --bad:#ff5a5f; --bad-soft:#341417;
-    --track:#1d2840; --shadow:none;
-    --fr:#3987e5; --fz:#d95926; --grid:#1c2740;
+    --track:#1d2840; --shadow:none; --fr:#3987e5; --fz:#d95926; --grid:#1c2740; --nav:rgba(18,27,45,.94);
   }
 }
 :root[data-theme="dark"]{
   --bg:#0b1220; --card:#121b2d; --ink:#e7edf6; --muted:#8c9ab0; --line:#1f2b42;
   --ice:#5cb0ff; --ice-soft:#13263f; --ok:#34d07f; --ok-soft:#10291e;
   --warn:#f5b13a; --warn-soft:#2c2210; --bad:#ff5a5f; --bad-soft:#341417;
-  --track:#1d2840; --shadow:none;
-  --fr:#3987e5; --fz:#d95926; --grid:#1c2740;
+  --track:#1d2840; --shadow:none; --fr:#3987e5; --fz:#d95926; --grid:#1c2740; --nav:rgba(18,27,45,.94);
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-body{
-  background:var(--bg); color:var(--ink);
-  font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
-  -webkit-tap-highlight-color:transparent;
-}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  padding:env(safe-area-inset-top) 0 calc(76px + env(safe-area-inset-bottom));-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
 .wrap{max-width:960px;margin:0 auto;padding:16px}
 header{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
 .brand{display:flex;align-items:center;gap:10px}
@@ -58,13 +53,31 @@ button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--lin
 button:active{transform:scale(.98)}
 button.primary{background:var(--ice);border-color:var(--ice);color:#fff}
 button.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+button.ghost{background:transparent}
+button.small{padding:6px 10px;font-size:13px}
 button:disabled{opacity:.45;cursor:not-allowed}
-.banner{display:none;align-items:center;gap:12px;justify-content:space-between;background:var(--bad-soft);border:1px solid var(--bad);color:var(--ink);border-radius:14px;padding:12px 14px;margin-bottom:14px}
-.banner.show{display:flex;animation:pulse 1.2s ease-in-out infinite}
-.banner b{color:var(--bad)}
+input,select,textarea{font:inherit;color:var(--ink)}
+.input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+textarea.input{resize:vertical;min-height:70px}
+select{font-weight:600;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+.banner{display:none;align-items:center;gap:12px;justify-content:space-between;border-radius:14px;padding:12px 14px;margin-bottom:14px;border:1px solid}
+.banner.show{display:flex}
+.banner.alarm{background:var(--bad-soft);border-color:var(--bad);animation:pulse 1.2s ease-in-out infinite}
+.banner.alarm b{color:var(--bad)}
+.banner.info{background:var(--ice-soft);border-color:var(--ice)}
+.banner.warn{background:var(--warn-soft);border-color:var(--warn)}
 @keyframes pulse{50%{box-shadow:0 0 0 4px color-mix(in srgb,var(--bad) 25%,transparent)}}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
+.card h3{margin:0;font-size:15px}
+.section-title{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin:22px 4px 8px}
+.section-title:first-child{margin-top:4px}
+.muted{color:var(--muted);font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.stack{display:grid;gap:12px;align-content:start}
+.head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.divider{border-top:1px solid var(--line)}
+/* doors */
 .door-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .door-head h2{margin:0;font-size:16px}
 .door-head h2 span{color:var(--muted);font-weight:500;margin-left:6px;font-size:13px}
@@ -73,17 +86,16 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .pill.warn{background:var(--warn-soft);color:var(--warn)}
 .pill.alarm{background:var(--bad-soft);color:var(--bad)}
 .pill.unknown{background:var(--track);color:var(--muted)}
-.gauge{position:relative;width:180px;height:180px;margin:6px auto 4px}
+.gauge{position:relative;width:170px;height:170px;margin:6px auto 4px}
 .gauge svg{width:100%;height:100%;transform:rotate(-90deg)}
 .gauge .track{stroke:var(--track)}
-.gauge .bar{stroke:var(--ok);transition:stroke-dashoffset .3s linear,stroke .3s}
-.gauge .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.big{font-size:46px;font-weight:750;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+.gauge .bar{transition:stroke-dashoffset .3s linear,stroke .3s}
+.gauge .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.big{font-size:44px;font-weight:750;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
 .big small{font-size:18px;font-weight:600;color:var(--muted);margin-left:2px}
-.sub{font-size:13px;color:var(--muted);margin-top:4px}
+.sub{font-size:13px;color:var(--muted);margin-top:4px;max-width:130px}
 .card.alarm .gauge .bar{animation:blink .6s steps(1) infinite}
 @keyframes blink{50%{opacity:.25}}
-.stats-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:12px 2px -4px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
 .stat{background:var(--bg);border-radius:12px;padding:8px 10px}
 .stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
@@ -92,29 +104,26 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .limit label{font-size:13px;color:var(--muted);font-weight:600;margin-right:auto}
 .stepper{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .stepper button{border:0;border-radius:0;padding:8px 12px}
-.stepper input{width:46px;text-align:center;border:0;background:transparent;color:var(--ink);font:inherit;font-weight:700;font-variant-numeric:tabular-nums}
+.stepper input{width:46px;text-align:center;border:0;background:transparent;font-weight:700;font-variant-numeric:tabular-nums}
 .stepper input::-webkit-inner-spin-button{display:none}
-.section-title{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin:22px 4px 8px}
-.log{list-style:none;margin:0;padding:0;max-height:300px;overflow:auto}
-.log li{display:flex;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:14px}
-.log li:last-child{border:0}
-.log time{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px;min-width:62px;padding-top:2px}
-.log .tag{font-weight:700}
-.log .alarm{color:var(--bad)}
-.empty{color:var(--muted);font-size:14px;padding:8px 2px}
-.settings{display:grid;gap:12px}
-.field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
-.field input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
-.row{display:flex;gap:8px;flex-wrap:wrap}
-.toggle{display:flex;align-items:center;justify-content:space-between;gap:10px}
-footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 10px}
-.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(120px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;transition:transform .25s;z-index:9;max-width:calc(100% - 32px)}
-.toast:empty,.toast:not(.show){visibility:hidden}
-.toast.show{transform:translateX(-50%) translateY(0);visibility:visible}
-#installBtn{display:none}
-.chart-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-.chart-head h3{margin:0;font-size:15px}
-.muted{color:var(--muted);font-size:13px}
+/* score */
+.score{display:flex;align-items:center;gap:16px}
+.score .gauge{width:120px;height:120px;margin:0;flex:none}
+.score .big{font-size:36px}
+.grade{font-size:20px;font-weight:750}
+.tips{margin:6px 0 0;padding:0;list-style:none;color:var(--muted);font-size:13px}
+.tips li{margin:2px 0}
+/* report */
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.kpi{background:var(--bg);border-radius:12px;padding:10px}
+.kpi span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.kpi b{display:block;font-size:20px;font-variant-numeric:tabular-nums;margin:2px 0}
+.kpi i{font-style:normal;font-size:12px;font-weight:600;color:var(--muted)}
+.kpi i.better{color:var(--ok)} .kpi i.worse{color:var(--warn)}
+.facts{margin:10px 0 0;padding:0;list-style:none;font-size:14px}
+.facts li{padding:6px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px}
+.facts li span{color:var(--muted)}
+/* charts */
 .chart svg{display:block;width:100%;height:auto;overflow:visible}
 .chart text{fill:var(--muted);font-size:10px;font-family:inherit}
 .chart .gl{stroke:var(--grid);stroke-width:1}
@@ -126,14 +135,33 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 10px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .seg button{border:0;border-radius:0;padding:6px 10px;font-size:13px;background:transparent;color:var(--muted)}
 .seg button.on{background:var(--ice-soft);color:var(--ice)}
-.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;font-weight:600;padding:6px 9px;border-radius:8px;z-index:10;opacity:0;transition:opacity .1s;white-space:nowrap}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;font-weight:600;padding:6px 9px;border-radius:8px;z-index:20;opacity:0;transition:opacity .1s;white-space:nowrap}
 .tip.show{opacity:1}
-.controls{display:grid;gap:14px}
+/* lists */
+.list{list-style:none;margin:0;padding:0}
+.list li{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);font-size:15px}
+.list li:last-child{border:0}
+.list li .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list .empty{color:var(--muted);font-size:14px}
+.badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;background:var(--track);color:var(--muted);white-space:nowrap}
+.badge.bad{background:var(--bad-soft);color:var(--bad)}
+.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.badge.ok{background:var(--ok-soft);color:var(--ok)}
+.chips2{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chips2 button{padding:5px 10px;font-size:13px;border-radius:99px;background:var(--bg)}
+.chips2 button.have{opacity:.45}
+.check{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);background:transparent;padding:0;flex:none;font-size:13px;color:var(--ok)}
+.check:hover{border-color:var(--ok)}
+details summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--ice);margin-top:10px}
+.notes .note{background:var(--bg);border-radius:12px;padding:10px 12px;margin-top:8px}
+.notes .note small{display:block;color:var(--muted);font-size:12px;margin-bottom:2px}
+.msgstatus{font-size:13px;color:var(--muted);margin-top:8px}
+.msgstatus b{color:var(--ink)}
+/* controls */
 .ctl-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .ctl-row b{display:block;font-size:15px}
 .ctl-row small{color:var(--muted);font-size:12px}
 .ctl-row label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);font-weight:600}
-select{font:inherit;font-weight:600;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
 input[type=range]{width:100%;accent-color:var(--ice)}
 .switch{position:relative;width:46px;height:26px;flex:none}
 .switch input{opacity:0;width:0;height:0}
@@ -142,12 +170,37 @@ input[type=range]{width:100%;accent-color:var(--ice)}
 .switch input:checked+span{background:var(--ice)}
 .switch input:checked+span:before{transform:translateX(20px)}
 .qpill{font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;background:var(--ice-soft);color:var(--ice);margin-left:6px;vertical-align:1px}
-.divider{border-top:1px solid var(--line)}
-.fw{display:grid;gap:10px;align-content:start}
-.fw small{color:var(--muted);font-size:12px}
+.pages{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 12px}
+.pages label{display:flex;align-items:center;gap:8px;font-size:14px}
+.pages input{width:18px;height:18px;accent-color:var(--ice)}
+.pinbox{letter-spacing:.6em;font-size:20px;font-weight:700;text-align:center;max-width:150px}
 a.btn{display:inline-block;text-align:center;text-decoration:none;font-weight:600;border-radius:10px;padding:10px 14px;background:var(--ice);color:#fff}
 a.btn.disabled{opacity:.45;pointer-events:none}
-@media (max-width:420px){.big{font-size:40px}.gauge{width:160px;height:160px}}
+/* log */
+.log{list-style:none;margin:0;padding:0;max-height:320px;overflow:auto}
+.log li{display:flex;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:14px}
+.log li:last-child{border:0}
+.log time{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px;min-width:62px;padding-top:2px}
+.log .tag{font-weight:700}
+.log .alarm{color:var(--bad)}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+footer{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 10px}
+/* bottom nav */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--nav);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+nav.tabs .in{max-width:620px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+nav.tabs button{border:0;background:transparent;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--muted);position:relative;border-radius:12px}
+nav.tabs button .ic{font-size:20px;line-height:1}
+nav.tabs button.on{color:var(--ice);background:var(--ice-soft)}
+nav.tabs .nb{position:absolute;top:2px;right:calc(50% - 22px);min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--bad);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;transition:transform .2s,opacity .2s;z-index:30;max-width:calc(100% - 32px);opacity:0;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+dialog{border:1px solid var(--line);border-radius:18px;background:var(--card);color:var(--ink);padding:20px;max-width:340px;width:calc(100% - 32px)}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+#qrBox{background:#fff;border-radius:12px;padding:10px;margin:12px auto;width:220px}
+#qrBox svg{display:block;width:100%;height:auto}
+#installBtn{display:none}
+@media (max-width:420px){.big{font-size:38px}.gauge{width:150px;height:150px}}
 </style>
 </head>
 <body>
@@ -155,97 +208,219 @@ a.btn.disabled{opacity:.45;pointer-events:none}
   <header>
     <div class="brand">
       <img src="icon-192.png" alt="">
-      <div><h1>Fridge OS</h1><small id="devLabel">sfos-a7x29k</small></div>
+      <div><h1>Fridge OS</h1><small id="devLabel">–</small></div>
     </div>
     <div class="chips">
       <span class="chip" id="chipBroker"><i class="dot"></i>Cloud</span>
       <span class="chip" id="chipDevice"><i class="dot"></i><span>Fridge</span></span>
-      <button id="installBtn" class="primary">Install app</button>
+      <button id="installBtn" class="primary small">Install app</button>
     </div>
   </header>
 
-  <div class="banner" id="banner">
-    <div id="bannerText"><b>Door alarm</b></div>
-    <button class="danger" id="muteBtn">Mute</button>
-  </div>
+  <div class="banner alarm" id="banner"><div id="bannerText"></div><button class="danger" id="muteBtn">Mute</button></div>
+  <div class="banner warn" id="ajarBanner"><div id="ajarText"></div></div>
+  <div class="banner info" id="awayBanner"><div>🧳 <b>Away mode is on.</b> You'll get an alert if a door opens.</div><button class="small" id="awayOffBtn">Turn off</button></div>
 
-  <div class="grid" id="doors"></div>
-
-  <div class="section-title">History</div>
-  <div class="grid">
-    <section class="card">
-      <div class="chart-head"><h3>Today by hour</h3><span class="muted" id="hourTotal"></span></div>
-      <div class="chart" id="hourChart" role="img" aria-label="Door opens per hour today"></div>
-    </section>
-    <section class="card">
-      <div class="chart-head">
-        <h3>Last 7 days</h3>
-        <div class="seg" id="weekSeg"><button data-m="opens" class="on">Opens</button><button data-m="time">Time open</button></div>
-      </div>
-      <div class="legend"><span><i style="background:var(--fr)"></i>FR Fridge</span><span><i style="background:var(--fz)"></i>FZ Freezer</span></div>
-      <div class="chart" id="weekChart" role="img" aria-label="Door opens per day, last 7 days"></div>
-    </section>
-  </div>
-
-  <div class="section-title">Controls</div>
-  <div class="grid">
-    <section class="card controls">
-      <div class="ctl-row">
-        <div><b>Quiet hours <span class="qpill" id="qNow" hidden>Quiet now</span></b><small>No buzzer in this window. Lights and screens still warn you.</small></div>
-        <label class="switch"><input type="checkbox" id="qOn" aria-label="Quiet hours on"><span></span></label>
-      </div>
-      <div class="ctl-row">
-        <label>From <select id="qStart"></select></label>
-        <label>to <select id="qEnd"></select></label>
-        <button class="primary" id="qSave">Save</button>
-      </div>
-      <div class="divider"></div>
-      <div class="ctl-row"><div><b>LED brightness</b><small id="brVal">–</small></div></div>
-      <input type="range" id="br" min="5" max="255" step="5" aria-label="LED brightness">
-      <div class="divider"></div>
-      <div class="row">
-        <button id="beepBtn">🔔 Beep fridge</button>
-        <button id="restartBtn">↻ Restart fridge</button>
-      </div>
-    </section>
-    <section class="card fw">
-      <div class="ctl-row"><div><b>Firmware</b><small id="fwInfo">waiting for fridge…</small></div></div>
-      <a class="btn disabled" id="fwLink" target="_blank" rel="noopener">Open update page</a>
-      <small>Upload new code over WiFi. Your phone must be on the <b>same WiFi</b> as the fridge. Login: <b>admin</b> / <b>fridgeota</b>.</small>
-      <small>In Arduino IDE: Sketch → Export Compiled Binary, then upload the <b>.ino.bin</b> file.</small>
-    </section>
-  </div>
-
-  <div class="section-title">Activity</div>
-  <div class="card"><ul class="log" id="log"></ul></div>
-
-  <div class="section-title">Settings</div>
-  <div class="card settings">
-    <div class="field">
-      <label for="devId">Device ID (same as in the ESP32 code)</label>
-      <input id="devId" autocomplete="off" spellcheck="false">
+  <!-- ================= HOME ================= -->
+  <div data-tab="home">
+    <div class="banner info show" id="reportBanner" hidden><div>📋 <b>Your weekly report is ready.</b></div><button class="small" data-goto="stats">See it</button></div>
+    <div class="grid" id="doors"></div>
+    <div class="section-title">Today</div>
+    <div class="grid">
+      <section class="card">
+        <div class="head"><h3>Fridge score</h3><span class="muted">0–100, resets at midnight</span></div>
+        <div class="score">
+          <div class="gauge"><svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="50" fill="none" stroke-width="10"/>
+            <circle class="bar" id="scoreBar" cx="60" cy="60" r="50" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16"/></svg>
+            <div class="center"><div class="big" id="scoreNum">–</div></div></div>
+          <div><div class="grade" id="scoreWord">–</div><ul class="tips" id="scoreTips"></ul></div>
+        </div>
+      </section>
+      <section class="card">
+        <div class="head"><h3>Activity</h3><button class="small ghost" id="clearLog">Clear</button></div>
+        <ul class="log" id="log"></ul>
+      </section>
     </div>
-    <div class="field">
-      <label for="broker">Broker (WebSocket URL)</label>
-      <input id="broker" autocomplete="off" spellcheck="false">
+  </div>
+
+  <!-- ================= KITCHEN ================= -->
+  <div data-tab="kitchen" hidden>
+    <div class="grid">
+      <section class="card">
+        <div class="head"><h3>🛒 Shopping list</h3><button class="small ghost" id="shopClear">Clear all</button></div>
+        <form class="row" id="shopForm"><input class="input" id="shopInput" maxlength="20" placeholder="Add item…" autocomplete="off" style="flex:1"><button class="primary">Add</button></form>
+        <ul class="list" id="shopList" style="margin-top:6px"></ul>
+        <div class="muted" style="margin-top:10px">Quick add:</div>
+        <div class="chips2" id="pickChips"></div>
+        <details>
+          <summary>Edit quick-add buttons (also on the fridge)</summary>
+          <p class="muted">One item per line, up to 24, max 9 letters each. These are the buttons on the fridge's Quick Add screen (press 0).</p>
+          <textarea class="input" id="picksText" rows="6"></textarea>
+          <div class="row" style="margin-top:8px"><button class="primary small" id="picksSave">Save buttons</button></div>
+        </details>
+      </section>
+      <section class="card">
+        <div class="head"><h3>🥛 Food expiry</h3><span class="muted" id="foodCount"></span></div>
+        <form class="stack" id="foodForm">
+          <input class="input" id="foodName" maxlength="20" placeholder="Food name (e.g. Milk)" autocomplete="off">
+          <div class="row"><input class="input" type="date" id="foodDate" style="flex:1"><button class="primary">Add</button></div>
+        </form>
+        <ul class="list" id="foodList" style="margin-top:6px"></ul>
+      </section>
     </div>
-    <div class="row">
-      <button class="primary" id="saveSettings">Save &amp; reconnect</button>
-      <button id="notifBtn">Enable alerts</button>
-      <button id="resetBtn">Reset fridge stats</button>
-      <button id="clearLog">Clear activity</button>
+    <div class="section-title">Family</div>
+    <div class="grid">
+      <section class="card">
+        <div class="head"><h3>💬 Message to fridge</h3></div>
+        <p class="muted" style="margin:0 0 8px">Shows on the fridge screen until someone presses a key.</p>
+        <form class="stack" id="msgForm">
+          <textarea class="input" id="msgInput" maxlength="80" placeholder="e.g. Dinner is in the blue box 🍝"></textarea>
+          <div class="row"><button class="primary">Send</button><button type="button" class="ghost small" id="msgClear">Clear from fridge</button><span class="muted" id="msgLen" style="margin-left:auto">0/80</span></div>
+        </form>
+        <div class="msgstatus" id="msgStatus"></div>
+      </section>
+      <section class="card notes">
+        <div class="head"><h3>📝 Notes from the fridge</h3><button class="small ghost" id="notesClear">Clear</button></div>
+        <p class="muted" style="margin:0">Typed on the fridge keypad: Menu (D) → 6.</p>
+        <div id="notes"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ================= STATS ================= -->
+  <div data-tab="stats" hidden>
+    <div class="grid">
+      <section class="card">
+        <div class="head"><h3>Weekly report</h3><span class="muted">last 7 days vs the 7 before</span></div>
+        <div class="kpis" id="kpis"></div>
+        <ul class="facts" id="facts"></ul>
+      </section>
+      <section class="card">
+        <div class="head"><h3>Today by hour</h3><span class="muted" id="hourTotal"></span></div>
+        <div class="chart" id="hourChart" role="img" aria-label="Door opens per hour today"></div>
+      </section>
+    </div>
+    <div class="section-title">Last 7 days</div>
+    <div class="grid">
+      <section class="card">
+        <div class="head">
+          <h3>Doors per day</h3>
+          <div class="seg" id="weekSeg"><button data-m="opens" class="on">Opens</button><button data-m="time">Time open</button></div>
+        </div>
+        <div class="legend"><span><i style="background:var(--fr)"></i>FR Fridge</span><span><i style="background:var(--fz)"></i>FZ Freezer</span></div>
+        <div class="chart" id="weekChart" role="img" aria-label="Door opens per day, last 7 days"></div>
+      </section>
+      <section class="card stack">
+        <h3>Export</h3>
+        <p class="muted" style="margin:0">Download your fridge data as a spreadsheet (CSV) – handy for a school or competition report.</p>
+        <div class="row"><button class="primary" id="csvDays">📊 Daily history (14 days)</button><button id="csvLog">Activity log</button></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ================= CONTROLS ================= -->
+  <div data-tab="controls" hidden>
+    <div class="grid">
+      <section class="card stack">
+        <div class="ctl-row">
+          <div><b>Quiet hours <span class="qpill" id="qNow" hidden>Quiet now</span></b><small>No buzzer in this window. Lights, screens and phone alerts still work. A door left open 5 min still beeps.</small></div>
+          <label class="switch"><input type="checkbox" id="qOn" aria-label="Quiet hours on"><span></span></label>
+        </div>
+        <div class="ctl-row">
+          <label>From <select id="qStart"></select></label>
+          <label>to <select id="qEnd"></select></label>
+          <button class="primary" id="qSave">Save</button>
+        </div>
+        <div class="divider"></div>
+        <div class="ctl-row">
+          <div><b>Away mode</b><small>Instant alert on your phone whenever a door opens.</small></div>
+          <label class="switch"><input type="checkbox" id="awayOn" aria-label="Away mode"><span></span></label>
+        </div>
+        <div class="divider"></div>
+        <div class="ctl-row"><div><b>LED brightness</b><small id="brVal">–</small></div></div>
+        <input type="range" id="br" min="5" max="255" step="5" aria-label="LED brightness">
+        <div class="divider"></div>
+        <div class="row"><button id="beepBtn">🔔 Beep fridge</button><button id="restartBtn">↻ Restart fridge</button></div>
+      </section>
+      <section class="card stack">
+        <div><b>Alarm sounds</b><div class="muted">Each door can have its own tune. It gets faster and higher the longer the door stays open.</div></div>
+        <div class="ctl-row"><label>FR Fridge <select id="tuneFR"></select></label><button class="small" data-test="FR">▶ Test</button></div>
+        <div class="ctl-row"><label>FZ Freezer <select id="tuneFZ"></select></label><button class="small" data-test="FZ">▶ Test</button></div>
+        <div class="muted">Melody and siren need a passive buzzer. An active buzzer plays every tune at its own pitch, but the rhythms still differ.</div>
+      </section>
+    </div>
+    <div class="section-title">Fridge screen (OLED)</div>
+    <div class="grid">
+      <section class="card stack">
+        <div><b>Pages to rotate</b><div class="muted">Shopping and food pages only show when they have items.</div></div>
+        <div class="pages" id="pages"></div>
+        <div class="ctl-row"><label>Change page every <select id="oRot"></select></label></div>
+        <div class="ctl-row"><div><b>Big clock only</b><small>Just a large clock when doors are closed.</small></div>
+          <label class="switch"><input type="checkbox" id="oBig"><span></span></label></div>
+        <div class="ctl-row"><label>Screensaver <select id="oSaver">
+          <option value="0">Off</option><option value="1">At night (quiet hours)</option><option value="2">Whenever idle 2 min</option></select></label></div>
+        <div class="row"><button class="primary" id="oSave">Save screen settings</button></div>
+      </section>
+      <section class="card stack">
+        <div class="ctl-row"><div><b>🔒 Child lock</b><small id="pinState">–</small></div></div>
+        <p class="muted" style="margin:0">A 4-digit PIN protects alarm limits, quiet hours, away mode and WiFi reset on the fridge keypad. Shopping, food and notes stay open for everyone.</p>
+        <div class="row"><input class="input pinbox" id="pinInput" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off"><button class="primary" id="pinSet">Set PIN</button><button id="pinOff">Remove PIN</button></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ================= SETTINGS ================= -->
+  <div data-tab="settings" hidden>
+    <div class="grid">
+      <section class="card stack">
+        <h3>Connection</h3>
+        <div class="field"><label for="devId">Device ID (Menu → 9 Info on the fridge)</label><input class="input" id="devId" autocomplete="off" spellcheck="false"></div>
+        <div class="field"><label for="broker">Broker (WebSocket URL)</label><input class="input" id="broker" autocomplete="off" spellcheck="false"></div>
+        <div class="row"><button class="primary" id="saveSettings">Save &amp; reconnect</button><button id="notifBtn">Enable alerts</button></div>
+      </section>
+      <section class="card stack">
+        <h3>👨‍👩‍👧 Share with family</h3>
+        <p class="muted" style="margin:0">Family members scan the QR code, open the link and install the app. It connects to this fridge automatically.</p>
+        <div class="row"><button class="primary" id="shareBtn">Show QR code</button></div>
+      </section>
+      <section class="card stack">
+        <div class="ctl-row"><div><b>Firmware</b><small id="fwInfo">waiting for fridge…</small></div></div>
+        <a class="btn disabled" id="fwLink" target="_blank" rel="noopener">Open update page</a>
+        <small class="muted">Upload new code over WiFi. Your phone must be on the <b>same WiFi</b> as the fridge. Login: <b>admin</b> / <b>fridgeota</b>. In Arduino IDE: Sketch → Export Compiled Binary, then upload the <b>.ino.bin</b>.</small>
+      </section>
+      <section class="card stack">
+        <h3>Reset</h3>
+        <div class="row"><button id="resetBtn">Reset today's stats</button></div>
+      </section>
     </div>
   </div>
 
   <footer id="footer">Waiting for data…</footer>
 </div>
+
+<nav class="tabs" aria-label="Sections"><div class="in">
+  <button data-goto="home" class="on"><span class="ic">🏠</span>Home</button>
+  <button data-goto="kitchen"><span class="ic">🛒</span>Kitchen<span class="nb" id="kitchenBadge" hidden></span></button>
+  <button data-goto="stats"><span class="ic">📊</span>Stats</button>
+  <button data-goto="controls"><span class="ic">🎛️</span>Controls</button>
+  <button data-goto="settings"><span class="ic">⚙️</span>Settings</button>
+</div></nav>
+
+<dialog id="qrDlg">
+  <h3 style="margin:0">Scan to connect</h3>
+  <div id="qrBox"></div>
+  <input class="input" id="shareLink" readonly>
+  <div class="row" style="margin-top:10px;justify-content:flex-end"><button id="copyLink">Copy link</button><button class="primary" id="qrClose">Done</button></div>
+</dialog>
+
 <div class="toast" id="toast"></div>
 <div class="tip" id="tip"></div>
 
 <script src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
 (() => {
-  // ---------- settings ----------
+  // ================= setup =================
   const DEFAULTS = { devId: "sfos-a7x29k", broker: "wss://broker.hivemq.com:8884/mqtt" };
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
@@ -253,38 +428,72 @@ a.btn.disabled{opacity:.45;pointer-events:none}
   };
   let cfg = Object.assign({}, DEFAULTS, store.get("sfos.cfg", {}));
   const DOOR_NAMES = { FR: "Fridge", FZ: "Freezer" };
+  const TUNES = ["Classic beep", "Chirp", "Melody", "Siren"];
+  const PAGES = ["Clock", "Today", "Opens per hour", "Fridge score", "Shopping list", "Food expiry", "Network"];
 
-  // ---------- state ----------
-  let client = null, state = null, receivedAt = 0, deviceOnline = null, prev = null, hist = null;
-  let weekMode = "opens", chartSig = "", qDirty = false, brDragging = false;
+  // shared link: ?id=<device id> connects this phone to the same fridge
+  const qp = new URLSearchParams(location.search);
+  let joinedShared = false;
+  if (qp.get("id")) {
+    const id = qp.get("id").trim().slice(0, 31);
+    if (id && id !== cfg.devId) { cfg.devId = id; store.set("sfos.cfg", cfg); joinedShared = true; }
+    history.replaceState(null, "", location.pathname);
+  }
+
+  let client = null, state = null, receivedAt = 0, deviceOnline = null, prev = null;
+  let hist = null, data = null, prevData = null;
   let events = store.get("sfos.log", []);
-  const editing = {};          // limit inputs the user is touching
+  let notes = store.get("sfos.notes", []);
+  let weekMode = "opens", chartSig = "", kitchenSig = "", qDirty = false, brDragging = false, oDirty = false;
+  const editing = {};
 
   const $ = id => document.getElementById(id);
-  const fmt = s => s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s/60)}m ${s%60}s` : `${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m`;
+  const esc = v => String(v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const fmt = s => { s = Math.max(0, Math.round(s)); return s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${Math.floor(s / 3600)}h ${Math.floor(s % 3600 / 60)}m`; };
+  const h12 = h => `${h % 12 || 12} ${h < 12 ? "AM" : "PM"}`;
   const clock = epoch => new Date(epoch * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const dayNumOf = d => Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+  const dateOfDayNum = n => { const d = new Date(n * 86400000); return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); };
+  const todayNum = () => dayNumOf(new Date());
   const toast = msg => { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2200); };
+  const send = cmd => {
+    if (!client || !client.connected) { toast("Not connected"); return false; }
+    client.publish(`sfos/${cfg.devId}/cmd`, cmd);
+    return true;
+  };
+  const scoreColor = s => s >= 90 ? "var(--ok)" : s >= 70 ? "var(--ice)" : s >= 50 ? "var(--warn)" : "var(--bad)";
+  const scoreWord = s => s >= 90 ? "Great" : s >= 70 ? "Good" : s >= 50 ? "OK" : "Poor";
 
-  // ---------- door cards ----------
-  const R = 78, C = 2 * Math.PI * R;
+  // ================= tabs =================
+  function showTab(t) {
+    document.querySelectorAll("[data-tab]").forEach(el => el.hidden = el.dataset.tab !== t);
+    document.querySelectorAll("nav.tabs button").forEach(b => b.classList.toggle("on", b.dataset.goto === t));
+    store.set("sfos.tab", t);
+    window.scrollTo(0, 0);
+    chartSig = "";
+    if (state) renderSlow();
+  }
+  document.addEventListener("click", e => { const b = e.target.closest("[data-goto]"); if (b) showTab(b.dataset.goto); });
+
+  // ================= door cards =================
+  const R = 70, C = 2 * Math.PI * R;
   function buildCard(tag) {
     const el = document.createElement("section");
     el.className = "card"; el.id = "door-" + tag;
     el.innerHTML = `
       <div class="door-head"><h2>${tag}<span>${DOOR_NAMES[tag] || ""}</span></h2><span class="pill unknown">—</span></div>
       <div class="gauge">
-        <svg viewBox="0 0 180 180"><circle class="track" cx="90" cy="90" r="${R}" fill="none" stroke-width="12"/>
-        <circle class="bar" cx="90" cy="90" r="${R}" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg>
+        <svg viewBox="0 0 170 170"><circle class="track" cx="85" cy="85" r="${R}" fill="none" stroke-width="12"/>
+        <circle class="bar" cx="85" cy="85" r="${R}" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg>
         <div class="center"><div class="big">0<small>s</small></div><div class="sub">door closed</div></div>
       </div>
-      <div class="stats-label">Today</div>
       <div class="stats">
         <div class="stat"><b data-k="n">0</b><span>Opens</span></div>
         <div class="stat"><b data-k="tot">0s</b><span>Total open</span></div>
         <div class="stat"><b data-k="avg">0s</b><span>Average</span></div>
         <div class="stat"><b data-k="max">0s</b><span>Longest</span></div>
         <div class="stat"><b data-k="ac">0</b><span>Alarms</span></div>
-        <div class="stat"><b data-k="l">–</b><span>Limit</span></div>
+        <div class="stat"><b data-k="ajc">0</b><span>Not shut</span></div>
       </div>
       <div class="limit">
         <label for="lim-${tag}">Alarm after</label>
@@ -297,9 +506,7 @@ a.btn.disabled{opacity:.45;pointer-events:none}
       </div>`;
     const input = el.querySelector("input");
     const clamp = v => Math.max(5, Math.min(99, Math.round(+v || 5)));
-    el.querySelectorAll("[data-step]").forEach(b => b.onclick = () => {
-      editing[tag] = true; input.value = clamp(+input.value + +b.dataset.step);
-    });
+    el.querySelectorAll("[data-step]").forEach(b => b.onclick = () => { editing[tag] = true; input.value = clamp(+input.value + +b.dataset.step); });
     input.oninput = () => editing[tag] = true;
     el.querySelector("[data-save]").onclick = () => {
       const v = clamp(input.value); input.value = v;
@@ -311,107 +518,92 @@ a.btn.disabled{opacity:.45;pointer-events:none}
 
   function renderDoor(d, liveSec) {
     const el = $("door-" + d.t) || buildCard(d.t);
+    const lv = d.lv || 0;
     const frac = d.o ? Math.min(1, liveSec / d.l) : 0;
-    const color = d.a ? "var(--bad)" : frac >= .75 ? "var(--bad)" : frac >= .5 ? "var(--warn)" : "var(--ok)";
+    const color = lv || frac >= .75 ? "var(--bad)" : frac >= .5 ? "var(--warn)" : "var(--ok)";
     const bar = el.querySelector(".bar");
     bar.style.strokeDashoffset = C * (1 - frac);
     bar.style.stroke = color;
-    el.classList.toggle("alarm", !!(d.a && !d.m));
-
+    el.classList.toggle("alarm", !!(lv && !d.m));
     const pill = el.querySelector(".pill");
-    pill.className = "pill " + (!d.o ? "" : d.a ? "alarm" : frac >= .5 ? "warn" : "open");
-    pill.textContent = !d.o ? "Closed" : d.a ? (d.m ? "Muted" : "Alarm") : "Open";
-
-    el.querySelector(".big").innerHTML = `${d.o ? liveSec : 0}<small>s</small>`;
-    el.querySelector(".sub").textContent = !d.o ? (d.lo ? `last opened ${clock(d.lo)}` : "door closed")
-      : d.a ? `over the ${d.l}s limit` : `${Math.max(0, d.l - liveSec)}s until alarm`;
-
+    let cls = "", txt = "Closed";
+    if (d.aj && !lv) { cls = "warn"; txt = "Not shut?"; }
+    else if (d.o && lv >= 3) { cls = "alarm"; txt = d.m ? "Left open · muted" : "Left open"; }
+    else if (d.o && lv) { cls = "alarm"; txt = d.m ? "Muted" : lv === 2 ? "Alarm ×2" : "Alarm"; }
+    else if (d.o) { cls = frac >= .5 ? "warn" : "open"; txt = "Open"; }
+    pill.className = "pill " + cls; pill.textContent = txt;
+    el.querySelector(".big").innerHTML = liveSec < 100 || !d.o ? `${d.o ? liveSec : 0}<small>s</small>` : `${Math.floor(liveSec / 60)}<small>m</small>${liveSec % 60}<small>s</small>`;
+    el.querySelector(".sub").textContent = !d.o ? (d.aj ? "may not be shut properly" : d.lo ? `last opened ${clock(d.lo)}` : "door closed")
+      : lv >= 3 ? "left open over 5 minutes" : lv === 2 ? "twice the limit!" : lv ? `over the ${d.l}s limit` : `${Math.max(0, d.l - liveSec)}s until alarm`;
     const tot = d.tot + (d.o ? liveSec - d.s : 0);
     const set = (k, v) => el.querySelector(`[data-k="${k}"]`).textContent = v;
-    set("n", d.n); set("tot", fmt(Math.max(0, tot)));
-    set("avg", d.n ? fmt(Math.round(tot / d.n)) : "0s");
-    set("max", fmt(Math.max(d.max, d.o ? liveSec : 0)));
-    set("ac", d.ac); set("l", d.l + "s");
+    set("n", d.n); set("tot", fmt(tot)); set("avg", d.n ? fmt(tot / d.n) : "0s");
+    set("max", fmt(Math.max(d.max, d.o ? liveSec : 0))); set("ac", d.ac); set("ajc", d.ajc || 0);
     const input = el.querySelector("input");
     if (!editing[d.t] && document.activeElement !== input) input.value = d.l;
   }
 
+  function isLive() {
+    const age = state ? (Date.now() - receivedAt) / 1000 : Infinity;
+    return deviceOnline !== false && age < 6;
+  }
+
+  // fast render: doors, banners, footer (4x a second)
   function render() {
     const age = state ? (Date.now() - receivedAt) / 1000 : Infinity;
-    const live = deviceOnline !== false && age < 6;
+    const live = isLive();
     const dc = $("chipDevice");
     dc.className = "chip " + (live ? "on" : "off");
     dc.querySelector("span").textContent = live ? "Fridge online" : state ? "Fridge offline" : "Waiting for fridge";
-
     if (!state) return;
-    renderControls();
-    renderCharts();
-    const alarms = [];
+    const alarms = [], ajars = [];
     state.doors.forEach(d => {
-      // count up smoothly between updates (max 3 s ahead)
       const liveSec = d.o && live ? d.s + Math.min(3, Math.floor(age)) : d.s;
       renderDoor(d, liveSec);
-      if (d.a && !d.m) alarms.push(`<b>${d.t}</b> open ${liveSec}s (limit ${d.l}s)`);
+      if (d.lv && !d.m) alarms.push(`<b>${d.t}</b> ${d.lv >= 3 ? "LEFT OPEN" : "open"} ${fmt(liveSec)}${d.lv === 2 ? " (2× limit)" : ""}`);
+      if (d.aj && !d.lv) ajars.push(`<b>${d.t}</b>`);
     });
     $("banner").classList.toggle("show", alarms.length > 0 && live);
     $("bannerText").innerHTML = "⚠ " + alarms.join(" · ");
+    $("ajarBanner").classList.toggle("show", ajars.length > 0 && live);
+    $("ajarText").innerHTML = `🚪 ${ajars.join(" and ")} door may not be shut properly. Give it a firm push.`;
+    $("awayBanner").classList.toggle("show", !!state.aw);
     $("footer").textContent = live
       ? `${state.ts ? "Fridge clock " + clock(state.ts + Math.floor(age)) + " · " : ""}Uptime ${fmt(state.up)} · WiFi ${state.rssi} dBm · updated ${age < 1.5 ? "just now" : Math.floor(age) + "s ago"}`
       : `Last data ${fmt(Math.floor(age))} ago`;
   }
 
-  // ---------- activity log ----------
-  function logEvent(tag, text, cls = "") {
-    events.unshift({ ts: Date.now(), tag, text, cls });
-    events = events.slice(0, 80);
-    store.set("sfos.log", events);
-    renderLog();
-  }
-  function renderLog() {
-    const ul = $("log");
-    if (!events.length) { ul.innerHTML = `<li class="empty">No door activity yet.</li>`; return; }
-    ul.innerHTML = events.map(e => {
-      const t = new Date(e.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-      return `<li><time>${t}</time><span class="${e.cls}"><span class="tag">${e.tag}</span> ${e.text}</span></li>`;
-    }).join("");
+  // slow render: score, charts, report, controls (when data changes)
+  function renderSlow() {
+    if (!state) return;
+    renderScore();
+    renderControls();
+    const tab = store.get("sfos.tab", "home");
+    if (tab === "stats") { renderCharts(); renderReport(); }
+    renderKitchen();
+    const sun = new Date().getDay() === 0;
+    $("reportBanner").hidden = !sun || !hist;
   }
 
-  function diff(next) {
-    if (!prev) return;
-    next.doors.forEach(d => {
-      const p = prev.doors.find(x => x.t === d.t);
-      if (!p) return;
-      if (!p.o && d.o) logEvent(d.t, "door opened");
-      if (p.o && !d.o) logEvent(d.t, `door closed after ${fmt(p.s)}`);
-      if (!p.a && d.a) { logEvent(d.t, `alarm! open longer than ${d.l}s`, "alarm"); notify(d); }
-      if (!p.m && d.m) logEvent(d.t, "alarm muted");
-      if (p.l !== d.l) logEvent(d.t, `limit changed to ${d.l}s`);
-    });
-    if (prev.q && next.q && prev.q.join() !== next.q.join())
-      logEvent("⚙", next.q[0] ? `quiet hours ${h12(next.q[1])} – ${h12(next.q[2])}` : "quiet hours off");
-    if (prev.fw && next.fw && prev.fw !== next.fw) logEvent("⚙", `firmware updated to v${next.fw}`);
+  // ================= score =================
+  function renderScore() {
+    const s = state.hs ?? 0;
+    $("scoreNum").textContent = s;
+    $("scoreWord").textContent = scoreWord(s);
+    $("scoreWord").style.color = scoreColor(s);
+    $("scoreBar").style.stroke = scoreColor(s);
+    $("scoreBar").style.strokeDashoffset = 314.16 * (1 - s / 100);
+    const A = state.doors.reduce((a, d) => a + d.ac, 0), T = state.doors.reduce((a, d) => a + d.tot, 0);
+    const J = state.doors.reduce((a, d) => a + (d.ajc || 0), 0), N = state.doors.reduce((a, d) => a + d.n, 0);
+    const tips = [];
+    tips.push(`${N} opening${N === 1 ? "" : "s"}, ${fmt(T)} open in total`);
+    tips.push(A ? `${A} alarm${A === 1 ? "" : "s"} – each costs 8 points` : "No alarms today 👍");
+    if (J) tips.push(`${J} time${J === 1 ? "" : "s"} not shut properly`);
+    if (T > 180) tips.push("Tip: decide what you need before opening");
+    $("scoreTips").innerHTML = tips.map(t => `<li>${esc(t)}</li>`).join("");
   }
 
-  // ---------- notifications ----------
-  async function notify(d) {
-    if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
-    if (!("Notification" in window) || Notification.permission !== "granted") return;
-    const title = `${DOOR_NAMES[d.t] || d.t} door open!`;
-    const opts = { body: `Open longer than ${d.l}s`, icon: "icon-192.png", tag: "sfos-" + d.t, renotify: true };
-    try { const reg = await navigator.serviceWorker?.ready; reg ? reg.showNotification(title, opts) : new Notification(title, opts); } catch {}
-  }
-  function updateNotifBtn() {
-    const b = $("notifBtn");
-    if (!("Notification" in window)) { b.disabled = true; b.textContent = "Alerts not supported"; return; }
-    b.textContent = Notification.permission === "granted" ? "Alerts on ✓" : "Enable alerts";
-    b.disabled = Notification.permission !== "default";
-  }
-  $("notifBtn").onclick = async () => { await Notification.requestPermission(); updateNotifBtn(); };
-
-  // ---------- charts ----------
-  const h12 = h => `${h % 12 || 12} ${h < 12 ? "AM" : "PM"}`;
-  const esc = v => String(v).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  // bar with 4px rounded top, square on the baseline
+  // ================= charts =================
   function bar(x, y0, w, h, fill) {
     if (h <= 0) return "";
     const r = Math.min(4, w / 2, h), y = y0 - h;
@@ -430,23 +622,26 @@ a.btn.disabled{opacity:.45;pointer-events:none}
     }
     return g;
   }
+  // today as a history-style row: [frOpens, fzOpens, frSecs, fzSecs, frAlarms, fzAlarms, frMax, fzMax, score]
+  function todayRow() {
+    const fr = state.doors.find(d => d.t === "FR") || {}, fz = state.doors.find(d => d.t === "FZ") || {};
+    return [fr.n || 0, fz.n || 0, fr.tot || 0, fz.tot || 0, fr.ac || 0, fz.ac || 0, fr.max || 0, fz.max || 0, state.hs ?? 0];
+  }
+  const histRows = () => (hist && hist.d) ? hist.d : new Array(14).fill([0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
   function renderCharts() {
-    const doors = state.doors || [];
-    const today = doors.map(d => [d.n, d.tot]);
-    const sig = JSON.stringify([hist, today, weekMode]);
+    const sig = JSON.stringify([hist, todayRow(), weekMode]);
     if (sig === chartSig) return;
     chartSig = sig;
-
-    // --- today by hour (both doors together)
+    const W = 320, top = 8, base = 112, left = 22;
+    // today by hour
     const H = hist && hist.h ? hist.h : new Array(24).fill(0);
-    const nowH = new Date((state.ts || Date.now() / 1000) * 1000).getHours();
-    const W = 320, top = 8, base = 112, left = 22, bw = (W - left) / 24;
+    const nowH = new Date().getHours(), bw = (W - left) / 24;
     const hMax = niceMax(Math.max(...H, 1));
     let svg = gridLines(W, top, base, hMax, v => v, left);
     H.forEach((v, h) => {
-      const x = left + h * bw + 1.5, w = bw - 3, bh = (base - top) * v / hMax;
-      svg += bar(x, base, w, bh, "var(--fr)");
+      const x = left + h * bw + 1.5, w = bw - 3;
+      svg += bar(x, base, w, (base - top) * v / hMax, "var(--fr)");
       svg += `<rect class="hit" x="${left + h * bw}" y="${top}" width="${bw}" height="${base - top}" data-tip="${esc(h12(h))}–${esc(h12((h + 1) % 24))}: ${v} open${v === 1 ? "" : "s"}"/>`;
       if (h === nowH) svg += `<rect x="${x}" y="${base + 3}" width="${w}" height="3" rx="1.5" fill="var(--ink)"/>`;
     });
@@ -456,49 +651,39 @@ a.btn.disabled{opacity:.45;pointer-events:none}
     const total = H.reduce((a, b) => a + b, 0);
     $("hourTotal").textContent = `${total} open${total === 1 ? "" : "s"} today`;
 
-    // --- last 7 days: 6 past days from the fridge's history + today live
-    const past = hist && hist.d ? hist.d.slice(0, 6).reverse() : new Array(6).fill([0, 0, 0, 0]);
-    const fr = doors.find(d => d.t === "FR") || { n: 0, tot: 0 }, fz = doors.find(d => d.t === "FZ") || { n: 0, tot: 0 };
-    const days = [...past, [fr.n, fz.n, fr.tot, fz.tot]];
+    // last 7 days (6 from history + today)
+    const days = [...histRows().slice(0, 6).reverse(), todayRow()];
     const timeMode = weekMode === "time";
-    const val = (d, i) => timeMode ? d[2 + i] / 60 : d[i];      // minutes or opens
+    const val = (d, i) => timeMode ? d[2 + i] / 60 : d[i];
     const fmtV = v => timeMode ? (v >= 60 ? `${Math.round(v / 6) / 10}h` : `${Math.round(v)}m`) : Math.round(v);
-    const wMax = niceMax(Math.max(...days.map(d => Math.max(val(d, 0), val(d, 1))), timeMode ? 1 : 1));
+    const wMax = niceMax(Math.max(...days.map(d => Math.max(val(d, 0), val(d, 1))), 1));
     const gw = (W - left) / 7, bw2 = Math.min(16, (gw - 10) / 2);
-    const now = new Date((state.ts || Date.now() / 1000) * 1000);
     let svg2 = gridLines(W, top, base, wMax, fmtV, left);
     days.forEach((d, k) => {
       const ago = 6 - k;
-      const date = new Date(now); date.setDate(now.getDate() - ago);
+      const date = new Date(); date.setDate(date.getDate() - ago);
       const label = ago === 0 ? "Today" : date.toLocaleDateString([], { weekday: "short" });
       const cx = left + k * gw + gw / 2;
-      ["fr", "fz"].forEach((c, i) => {
-        const x = cx - bw2 - 1 + i * (bw2 + 2), v = val(d, i);
-        svg2 += bar(x, base, bw2, (base - top) * v / wMax, `var(--${c})`);
-      });
-      const tipTxt = timeMode
-        ? `${label}: FR ${fmt(d[2])} · FZ ${fmt(d[3])}`
-        : `${label}: FR ${d[0]} · FZ ${d[1]} opens`;
+      ["fr", "fz"].forEach((c, i) => svg2 += bar(cx - bw2 - 1 + i * (bw2 + 2), base, bw2, (base - top) * val(d, i) / wMax, `var(--${c})`));
+      const tipTxt = timeMode ? `${label}: FR ${fmt(d[2])} · FZ ${fmt(d[3])}` : `${label}: FR ${d[0]} · FZ ${d[1]} opens`;
       svg2 += `<rect class="hit" x="${left + k * gw}" y="${top}" width="${gw}" height="${base - top}" data-tip="${esc(tipTxt)}"/>`;
       svg2 += `<text x="${cx}" y="${base + 18}" text-anchor="middle"${ago === 0 ? ' style="fill:var(--ink);font-weight:700"' : ""}>${esc(label)}</text>`;
     });
     svg2 += `<line class="base" x1="${left}" x2="${W}" y1="${base}" y2="${base}"/>`;
     $("weekChart").innerHTML = `<svg viewBox="0 0 ${W} ${base + 22}">${svg2}</svg>`;
   }
-
   $("weekSeg").querySelectorAll("button").forEach(b => b.onclick = () => {
     weekMode = b.dataset.m;
     $("weekSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
-    if (state) renderCharts();
+    chartSig = ""; if (state) renderCharts();
   });
 
-  // shared tooltip for both charts (hover on desktop, tap on phone)
+  // tooltip (hover on desktop, tap on phone)
   const tip = $("tip");
   function showTip(e) {
     const el = e.target.closest("[data-tip]");
     if (!el) { tip.classList.remove("show"); return; }
-    tip.textContent = el.dataset.tip;
-    tip.classList.add("show");
+    tip.textContent = el.dataset.tip; tip.classList.add("show");
     const r = tip.getBoundingClientRect();
     let x = e.clientX - r.width / 2, y = e.clientY - r.height - 12;
     x = Math.max(8, Math.min(window.innerWidth - r.width - 8, x));
@@ -512,106 +697,348 @@ a.btn.disabled{opacity:.45;pointer-events:none}
   });
   document.addEventListener("scroll", () => tip.classList.remove("show"), { passive: true });
 
-  // ---------- controls ----------
-  for (let h = 0; h < 24; h++) {
-    $("qStart").add(new Option(h12(h), h));
-    $("qEnd").add(new Option(h12(h), h));
+  // ================= weekly report =================
+  function renderReport() {
+    const rows = histRows();
+    const thisWeek = [todayRow(), ...rows.slice(0, 6)];      // [0] = today
+    const lastWeek = rows.slice(6, 13);
+    const hasData = r => r[0] + r[1] + r[8] > 0;
+    const sum = (arr, f) => arr.reduce((a, r) => a + f(r), 0);
+    const avgScore = arr => { const d = arr.filter(hasData); return d.length ? Math.round(sum(d, r => r[8]) / d.length) : null; };
+    const m = arr => ({
+      opens: sum(arr, r => r[0] + r[1]), secs: sum(arr, r => r[2] + r[3]),
+      alarms: sum(arr, r => r[4] + r[5]), score: avgScore(arr)
+    });
+    const a = m(thisWeek), b = m(lastWeek), lastHas = lastWeek.some(hasData);
+    const change = (now, before, lowerIsBetter = true) => {
+      if (!lastHas || before === null || now === null) return `<i>no data last week</i>`;
+      if (before === 0 && now === 0) return `<i>same as last week</i>`;
+      const pct = before === 0 ? 100 : Math.round((now - before) / before * 100);
+      if (pct === 0) return `<i>same as last week</i>`;
+      const better = lowerIsBetter ? pct < 0 : pct > 0;
+      return `<i class="${better ? "better" : "worse"}">${pct > 0 ? "▲" : "▼"} ${Math.abs(pct)}% ${better ? "better" : "worse"}</i>`;
+    };
+    $("kpis").innerHTML = `
+      <div class="kpi"><span>Opens</span><b>${a.opens}</b>${change(a.opens, b.opens)}</div>
+      <div class="kpi"><span>Time open</span><b>${fmt(a.secs)}</b>${change(a.secs, b.secs)}</div>
+      <div class="kpi"><span>Alarms</span><b>${a.alarms}</b>${change(a.alarms, b.alarms)}</div>
+      <div class="kpi"><span>Avg score</span><b>${a.score ?? "–"}</b>${change(a.score, b.score, false)}</div>`;
+    const dayName = ago => ago === 0 ? "Today" : new Date(Date.now() - ago * 864e5).toLocaleDateString([], { weekday: "long" });
+    let busiest = 0;
+    thisWeek.forEach((r, i) => { if (r[0] + r[1] > thisWeek[busiest][0] + thisWeek[busiest][1]) busiest = i; });
+    const frOpens = sum(thisWeek, r => r[0]), fzOpens = sum(thisWeek, r => r[1]);
+    let longest = 0, longestDoor = "", longestDay = 0;
+    thisWeek.forEach((r, i) => { if (r[6] > longest) { longest = r[6]; longestDoor = "FR"; longestDay = i; } if (r[7] > longest) { longest = r[7]; longestDoor = "FZ"; longestDay = i; } });
+    let best = -1, bestDay = 0;
+    thisWeek.forEach((r, i) => { if (hasData(r) && r[8] > best) { best = r[8]; bestDay = i; } });
+    const facts = [];
+    if (a.opens) facts.push(["Busiest day", `${dayName(busiest)} (${thisWeek[busiest][0] + thisWeek[busiest][1]} opens)`]);
+    if (a.opens) facts.push(["Most opened", frOpens >= fzOpens ? `Fridge (${frOpens})` : `Freezer (${fzOpens})`]);
+    if (longest) facts.push(["Longest opening", `${fmt(longest)} · ${longestDoor} on ${dayName(longestDay)}`]);
+    if (best >= 0) facts.push(["Best score", `${best} on ${dayName(bestDay)}`]);
+    $("facts").innerHTML = facts.length ? facts.map(f => `<li><span>${f[0]}</span><b>${esc(f[1])}</b></li>`).join("")
+      : `<li><span>Not enough data yet – check back after a few days.</span></li>`;
   }
+
+  // ================= kitchen =================
+  function foodBadge(day) {
+    const d = day - todayNum();
+    if (d < 0) return `<span class="badge bad">expired</span>`;
+    if (d === 0) return `<span class="badge bad">today</span>`;
+    if (d === 1) return `<span class="badge warn">tomorrow</span>`;
+    if (d <= 3) return `<span class="badge warn">${d} days</span>`;
+    return `<span class="badge ok">${d} days</span>`;
+  }
+  function renderKitchen() {
+    if (!data) return;
+    const sig = JSON.stringify([data, todayNum()]);
+    if (sig !== kitchenSig) {
+      kitchenSig = sig;
+      const shop = data.shop || [];
+      $("shopList").innerHTML = shop.length ? shop.map((s, i) =>
+        `<li><button class="check" data-shopdel="${i}" title="Bought" aria-label="Mark ${esc(s)} bought">✓</button><span class="name">${esc(s)}</span></li>`).join("")
+        : `<li class="empty">Nothing on the list. Add from here or press 0 on the fridge.</li>`;
+      const have = new Set(shop.map(s => s.toLowerCase()));
+      $("pickChips").innerHTML = (data.picks || []).map(p => `<button type="button" class="${have.has(p.toLowerCase()) ? "have" : ""}" data-pick="${esc(p)}">${have.has(p.toLowerCase()) ? "✓ " : "+ "}${esc(p)}</button>`).join("");
+      if (document.activeElement !== $("picksText")) $("picksText").value = (data.picks || []).join("\n");
+      const food = data.food || [];
+      $("foodList").innerHTML = food.length ? food.map((f, i) =>
+        `<li><span class="name">${esc(f[1])}</span>${foodBadge(f[0])}<button class="small ghost" data-fooddel="${i}" aria-label="Remove ${esc(f[1])}">✕</button></li>`).join("")
+        : `<li class="empty">No food tracked. Add items with their expiry date.</li>`;
+      $("foodCount").textContent = food.length ? `${food.length} item${food.length === 1 ? "" : "s"}` : "";
+      const m = data.msg || {};
+      $("msgStatus").innerHTML = !m.t ? "No message on the fridge."
+        : `On fridge: “${esc(m.t)}”<br>Sent ${m.ts ? clock(m.ts) : ""} · ${m.seen ? `<b>Seen ${clock(m.seen)} ✓</b>` : "not seen yet"}`;
+    }
+    const urgent = (data.food || []).filter(f => f[0] - todayNum() <= 1).length;
+    $("kitchenBadge").hidden = !urgent;
+    $("kitchenBadge").textContent = urgent;
+  }
+  function renderNotes() {
+    $("notes").innerHTML = notes.length ? notes.map(n => `<div class="note"><small>${new Date(n.ts).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })}</small>${esc(n.t)}</div>`).join("")
+      : `<div class="note muted">No notes yet.</div>`;
+  }
+
+  $("shopForm").onsubmit = e => {
+    e.preventDefault();
+    const v = $("shopInput").value.trim();
+    if (v && send(`shop add ${v.slice(0, 20)}`)) { $("shopInput").value = ""; toast(`Added ${v}`); }
+  };
+  $("shopList").onclick = e => { const b = e.target.closest("[data-shopdel]"); if (b && send(`shop del ${b.dataset.shopdel}`)) toast("Ticked off ✓"); };
+  $("pickChips").onclick = e => { const b = e.target.closest("[data-pick]"); if (b && !b.classList.contains("have") && send(`shop add ${b.dataset.pick}`)) toast(`Added ${b.dataset.pick}`); };
+  $("shopClear").onclick = () => { if (confirm("Clear the whole shopping list?")) send("shop clear"); };
+  $("picksSave").onclick = () => {
+    const list = $("picksText").value.split("\n").map(s => s.replace(/[|"\\]/g, "").trim().slice(0, 9)).filter(Boolean).slice(0, 24);
+    if (!list.length) { toast("Add at least one item"); return; }
+    if (send(`picks ${list.join("|")}`)) toast("Quick-add buttons saved");
+  };
+  const defDate = () => { const d = new Date(); d.setDate(d.getDate() + 3); return d.toISOString().slice(0, 10); };
+  $("foodDate").value = defDate();
+  $("foodForm").onsubmit = e => {
+    e.preventDefault();
+    const name = $("foodName").value.trim(), dv = $("foodDate").value;
+    if (!name || !dv) { toast("Add a name and a date"); return; }
+    const [y, mo, da] = dv.split("-").map(Number);
+    const dn = Math.floor(Date.UTC(y, mo - 1, da) / 86400000);
+    if (send(`food add ${dn} ${name.slice(0, 20)}`)) { $("foodName").value = ""; $("foodDate").value = defDate(); toast(`Added ${name}`); }
+  };
+  $("foodList").onclick = e => { const b = e.target.closest("[data-fooddel]"); if (b && send(`food del ${b.dataset.fooddel}`)) toast("Removed"); };
+  $("msgInput").oninput = () => $("msgLen").textContent = `${$("msgInput").value.length}/80`;
+  $("msgForm").onsubmit = e => {
+    e.preventDefault();
+    const v = $("msgInput").value.replace(/[\n\r]+/g, " ").trim();
+    if (v && send(`msg ${v.slice(0, 80)}`)) { $("msgInput").value = ""; $("msgLen").textContent = "0/80"; toast("Sent to the fridge"); logEvent("💬", `message sent: “${v}”`); }
+  };
+  $("msgClear").onclick = () => send("msg clear") && toast("Message removed");
+  $("notesClear").onclick = () => { notes = []; store.set("sfos.notes", notes); renderNotes(); };
+
+  // ================= controls =================
+  for (let h = 0; h < 24; h++) { $("qStart").add(new Option(h12(h), h)); $("qEnd").add(new Option(h12(h), h)); }
   $("qStart").value = 21; $("qEnd").value = 6;
   $("qStart").onchange = $("qEnd").onchange = () => qDirty = true;
-  $("qOn").onchange = () => {
-    if ($("qOn").checked) sendQuiet();
-    else if (send("quiet off")) { toast("Quiet hours off"); qDirty = false; }
-  };
   function sendQuiet() {
     const a = +$("qStart").value, b = +$("qEnd").value;
     if (a === b) { toast("Start and end must be different"); return; }
     if (send(`quiet ${a} ${b}`)) { toast(`Quiet ${h12(a)} – ${h12(b)}`); qDirty = false; $("qOn").checked = true; }
   }
   $("qSave").onclick = sendQuiet;
-
+  $("qOn").onchange = () => { if ($("qOn").checked) sendQuiet(); else if (send("quiet off")) { toast("Quiet hours off"); qDirty = false; } };
+  $("awayOn").onchange = () => send($("awayOn").checked ? "away on" : "away off");
+  $("awayOffBtn").onclick = () => send("away off") && toast("Away mode off");
   $("br").oninput = () => { brDragging = true; $("brVal").textContent = Math.round($("br").value / 2.55) + "%"; };
   $("br").onchange = () => { brDragging = false; send(`bright ${$("br").value}`); };
   $("beepBtn").onclick = () => send("beep") && toast("Beeping the fridge");
   $("restartBtn").onclick = () => { if (confirm("Restart the fridge controller? It takes about 10 seconds.")) send("restart") && toast("Restarting fridge…"); };
+  ["FR", "FZ"].forEach(t => {
+    TUNES.forEach((n, i) => $("tune" + t).add(new Option(n, i)));
+    $("tune" + t).onchange = () => send(`tune ${t} ${$("tune" + t).value}`) && toast(`${t} tune: ${TUNES[$("tune" + t).value]}`);
+  });
+  document.querySelectorAll("[data-test]").forEach(b => b.onclick = () => send(`tunetest ${$("tune" + b.dataset.test).value}`) && toast("Playing on the fridge…"));
+  $("pages").innerHTML = PAGES.map((p, i) => `<label><input type="checkbox" data-page="${i}"> ${p}</label>`).join("");
+  [3, 5, 6, 8, 10, 15, 20, 30].forEach(s => $("oRot").add(new Option(`${s} seconds`, s)));
+  ["pages", "oRot", "oBig", "oSaver"].forEach(id => $(id).addEventListener("change", () => oDirty = true));
+  $("oSave").onclick = () => {
+    let mask = 0;
+    document.querySelectorAll("[data-page]").forEach(c => { if (c.checked) mask |= 1 << +c.dataset.page; });
+    if (!mask && !$("oBig").checked) { toast("Pick at least one page"); return; }
+    if (send(`oled ${mask} ${$("oRot").value} ${$("oBig").checked ? 1 : 0} ${$("oSaver").value}`)) { oDirty = false; toast("Screen settings saved"); }
+  };
+  $("pinSet").onclick = () => {
+    const p = $("pinInput").value.trim();
+    if (!/^\d{4}$/.test(p)) { toast("PIN must be 4 digits"); return; }
+    if (send(`pin ${p}`)) { $("pinInput").value = ""; toast("PIN set – fridge is locked"); }
+  };
+  $("pinOff").onclick = () => { if (confirm("Remove the child-lock PIN?")) send("pin off") && toast("PIN removed"); };
 
   function renderControls() {
     if (state.q && !qDirty && document.activeElement?.tagName !== "SELECT") {
-      $("qOn").checked = !!state.q[0];
-      $("qStart").value = state.q[1]; $("qEnd").value = state.q[2];
+      $("qOn").checked = !!state.q[0]; $("qStart").value = state.q[1]; $("qEnd").value = state.q[2];
     }
     $("qNow").hidden = !state.qn;
+    $("awayOn").checked = !!state.aw;
     if (state.br != null && !brDragging && document.activeElement !== $("br")) {
-      $("br").value = state.br;
-      $("brVal").textContent = Math.round(state.br / 2.55) + "%";
+      $("br").value = state.br; $("brVal").textContent = Math.round(state.br / 2.55) + "%";
     }
+    state.doors.forEach(d => { const s = $("tune" + d.t); if (s && document.activeElement !== s && d.tn != null) s.value = d.tn; });
+    if (state.om && !oDirty) {
+      const [mask, rot, big, saver] = state.om;
+      document.querySelectorAll("[data-page]").forEach(c => c.checked = !!(mask & (1 << +c.dataset.page)));
+      $("oRot").value = rot; $("oBig").checked = !!big; $("oSaver").value = saver;
+    }
+    $("pinState").textContent = state.pin ? (state.lk ? "PIN is on · keypad locked" : "PIN is on · unlocked for a minute") : "Off – anyone can change settings on the keypad";
     if (state.fw) {
       $("fwInfo").textContent = `v${state.fw}${state.ip ? " · " + state.ip : ""}`;
-      const link = $("fwLink");
-      if (state.ip && state.ip !== "0.0.0.0") { link.href = `http://${state.ip}/`; link.classList.remove("disabled"); }
+      if (state.ip && state.ip !== "0.0.0.0") { $("fwLink").href = `http://${state.ip}/`; $("fwLink").classList.remove("disabled"); }
     }
   }
 
-  // ---------- MQTT ----------
-  const topics = () => ({ state: `sfos/${cfg.devId}/state`, online: `sfos/${cfg.devId}/online`, cmd: `sfos/${cfg.devId}/cmd`, hist: `sfos/${cfg.devId}/hist` });
+  // ================= activity log + notifications =================
+  function logEvent(tag, text, cls = "") {
+    events.unshift({ ts: Date.now(), tag, text, cls });
+    events = events.slice(0, 120);
+    store.set("sfos.log", events);
+    renderLog();
+  }
+  function renderLog() {
+    $("log").innerHTML = events.length ? events.map(e => {
+      const t = new Date(e.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      return `<li><time>${t}</time><span class="${e.cls}"><span class="tag">${esc(e.tag)}</span> ${esc(e.text)}</span></li>`;
+    }).join("") : `<li class="muted">No activity yet.</li>`;
+  }
+  async function notify(title, body, tag, urgent = false) {
+    if (navigator.vibrate) navigator.vibrate(urgent ? [400, 150, 400, 150, 400] : [250, 120, 250]);
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    const opts = { body, icon: "icon-192.png", tag: "sfos-" + tag, renotify: true, requireInteraction: urgent };
+    try { const reg = await navigator.serviceWorker?.ready; reg ? reg.showNotification(title, opts) : new Notification(title, opts); } catch {}
+  }
+  function updateNotifBtn() {
+    const b = $("notifBtn");
+    if (!("Notification" in window)) { b.disabled = true; b.textContent = "Alerts not supported"; return; }
+    b.textContent = Notification.permission === "granted" ? "Alerts on ✓" : "Enable alerts";
+    b.disabled = Notification.permission !== "default";
+  }
+  $("notifBtn").onclick = async () => { await Notification.requestPermission(); updateNotifBtn(); };
 
+  function diff(next) {
+    if (!prev) return;
+    next.doors.forEach(d => {
+      const p = prev.doors.find(x => x.t === d.t);
+      if (!p) return;
+      const name = DOOR_NAMES[d.t] || d.t;
+      if (!p.o && d.o) logEvent(d.t, "door opened");
+      if (p.o && !d.o) logEvent(d.t, `door closed after ${fmt(p.s)}`);
+      if ((d.lv || 0) > (p.lv || 0)) {
+        if (d.lv === 1) { logEvent(d.t, `alarm – open longer than ${d.l}s`, "alarm"); notify(`${name} door open!`, `Open longer than ${d.l}s`, d.t); }
+        if (d.lv === 2) { logEvent(d.t, "alarm – open twice the limit", "alarm"); notify(`⚠ ${name} door still open!`, `Open ${fmt(d.s)} – twice the limit`, d.t, true); }
+        if (d.lv === 3) { logEvent(d.t, "door LEFT OPEN for 5 minutes", "alarm"); notify(`🚨 ${name} door LEFT OPEN`, "It has been open for 5 minutes. Please close it.", d.t, true); }
+      }
+      if (!p.aj && d.aj) { logEvent(d.t, "door may not be shut properly", "alarm"); notify(`${name} door not shut?`, "It bounced open and shut. Give it a firm push.", d.t + "aj"); }
+      if (!p.m && d.m && d.lv) logEvent(d.t, "alarm muted");
+      if (p.l !== d.l) logEvent(d.t, `limit changed to ${d.l}s`);
+      if (p.tn !== d.tn && d.tn != null) logEvent(d.t, `alarm tune: ${TUNES[d.tn]}`);
+    });
+    if (prev.q && next.q && prev.q.join() !== next.q.join()) logEvent("⚙", next.q[0] ? `quiet hours ${h12(next.q[1])} – ${h12(next.q[2])}` : "quiet hours off");
+    if (prev.aw !== next.aw) logEvent("⚙", next.aw ? "away mode on" : "away mode off");
+    if (prev.pin !== next.pin) logEvent("🔒", next.pin ? "child-lock PIN set" : "child-lock PIN removed");
+    if (prev.fw && next.fw && prev.fw !== next.fw) logEvent("⚙", `firmware updated to v${next.fw}`);
+  }
+  function diffData(next) {
+    if (!prevData) return;
+    const a = prevData.msg || {}, b = next.msg || {};
+    if (b.seen && b.seen !== a.seen && b.t) logEvent("💬", `message seen at the fridge`);
+  }
+  function onEvent(ev) {
+    if (ev.e === "note") {
+      notes.unshift({ ts: Date.now(), t: ev.t });
+      notes = notes.slice(0, 30);
+      store.set("sfos.notes", notes);
+      renderNotes();
+      logEvent("📝", `note: “${ev.t}”`);
+      notify("📝 Note from the fridge", ev.t, "note");
+    } else if (ev.e === "away") {
+      logEvent(ev.d, "opened during away mode", "alarm");
+      notify(`🧳 ${DOOR_NAMES[ev.d] || ev.d} opened!`, "A door opened while away mode is on.", "away", true);
+    } else if (ev.e === "expiry") {
+      logEvent("🥛", `use soon: ${ev.t}`);
+      notify("🥛 Food to use soon", ev.t, "expiry");
+    }
+  }
+
+  // ================= MQTT =================
+  const topics = () => {
+    const b = `sfos/${cfg.devId}/`;
+    return { state: b + "state", online: b + "online", hist: b + "hist", data: b + "data", event: b + "event" };
+  };
   function connect() {
     if (client) { try { client.end(true); } catch {} }
-    state = null; prev = null; deviceOnline = null; hist = null; chartSig = "";
+    state = prev = hist = data = prevData = null; deviceOnline = null; chartSig = kitchenSig = "";
     $("doors").innerHTML = "";
     $("devLabel").textContent = cfg.devId;
-    const bc = $("chipBroker");
-    bc.className = "chip off";
-    if (typeof mqtt === "undefined") { toast("Can't load MQTT library — check internet"); return; }
-
-    client = mqtt.connect(cfg.broker, {
-      clientId: `${cfg.devId}-app-${Math.random().toString(16).slice(2, 8)}`,
-      reconnectPeriod: 3000, connectTimeout: 8000, clean: true
-    });
+    const bc = $("chipBroker"); bc.className = "chip off";
+    if (typeof mqtt === "undefined") { toast("Can't load MQTT library – check internet"); return; }
+    client = mqtt.connect(cfg.broker, { clientId: `${cfg.devId}-app-${Math.random().toString(16).slice(2, 8)}`, reconnectPeriod: 3000, connectTimeout: 8000, clean: true });
     const t = topics();
-    client.on("connect", () => { bc.className = "chip on"; client.subscribe([t.state, t.online, t.hist]); });
+    client.on("connect", () => { bc.className = "chip on"; client.subscribe(Object.values(t)); });
     client.on("reconnect", () => bc.className = "chip");
     client.on("close", () => bc.className = "chip off");
     client.on("error", e => console.warn("MQTT", e));
     client.on("message", (topic, buf) => {
       const msg = buf.toString();
-      if (topic === t.online) { deviceOnline = msg === "1"; render(); return; }
-      if (topic === t.hist) { try { hist = JSON.parse(msg); chartSig = ""; render(); } catch (e) { console.warn("bad hist", e); } return; }
-      if (topic === t.state) {
-        try {
-          const next = JSON.parse(msg);
-          diff(next);
-          state = next; prev = next; receivedAt = Date.now();
-          render();
-        } catch (e) { console.warn("bad state", e); }
-      }
+      try {
+        if (topic === t.online) { deviceOnline = msg === "1"; render(); }
+        else if (topic === t.state) { const next = JSON.parse(msg); diff(next); state = prev = next; receivedAt = Date.now(); render(); renderSlow(); }
+        else if (topic === t.hist) { hist = JSON.parse(msg); chartSig = ""; renderSlow(); }
+        else if (topic === t.data) { const next = JSON.parse(msg); diffData(next); data = prevData = next; renderKitchen(); }
+        else if (topic === t.event) onEvent(JSON.parse(msg));
+      } catch (e) { console.warn("bad message on", topic, e); }
     });
   }
 
-  function send(cmd) {
-    if (!client || !client.connected) { toast("Not connected"); return false; }
-    client.publish(topics().cmd, cmd);
-    return true;
+  // ================= export =================
+  function download(name, text) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type: "text/csv" }));
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  $("csvDays").onclick = () => {
+    if (!state) { toast("Waiting for fridge data"); return; }
+    const head = "date,fr_opens,fz_opens,fr_open_seconds,fz_open_seconds,fr_alarms,fz_alarms,fr_longest_seconds,fz_longest_seconds,score";
+    const rows = [];
+    const H = histRows();
+    for (let k = 13; k >= 0; k--) rows.push([iso(new Date(Date.now() - (k + 1) * 864e5)), ...H[k]].join(","));
+    rows.push([iso(new Date()), ...todayRow()].join(","));
+    download(`fridge-os-history-${iso(new Date())}.csv`, [head, ...rows].join("\n"));
+  };
+  $("csvLog").onclick = () => {
+    const q = s => `"${String(s).replace(/"/g, '""')}"`;
+    const rows = events.slice().reverse().map(e => [new Date(e.ts).toISOString(), q(e.tag), q(e.text)].join(","));
+    download(`fridge-os-activity-${iso(new Date())}.csv`, ["time,door,event", ...rows].join("\n"));
+  };
 
-  // ---------- buttons ----------
+  // ================= share with family =================
+  $("shareBtn").onclick = () => {
+    const url = `${location.origin}${location.pathname}?id=${encodeURIComponent(cfg.devId)}`;
+    $("shareLink").value = url;
+    if (typeof qrcode === "function") {
+      const qr = qrcode(0, "M"); qr.addData(url); qr.make();
+      $("qrBox").innerHTML = qr.createSvgTag(6, 2);
+    } else $("qrBox").innerHTML = `<p style="color:#333;text-align:center">QR needs internet – share the link below.</p>`;
+    $("qrDlg").showModal();
+  };
+  $("copyLink").onclick = async () => { try { await navigator.clipboard.writeText($("shareLink").value); toast("Link copied"); } catch { $("shareLink").select(); } };
+  $("qrClose").onclick = () => $("qrDlg").close();
+
+  // ================= settings + misc =================
   $("muteBtn").onclick = () => send("mute") && toast("Alarm muted");
-  $("resetBtn").onclick = () => { if (confirm("Reset opens, totals and alarms on the fridge?")) send("reset") && toast("Stats reset"); };
+  $("resetBtn").onclick = () => { if (confirm("Reset today's opens, totals and alarms on the fridge?")) send("reset") && toast("Stats reset"); };
   $("clearLog").onclick = () => { events = []; store.set("sfos.log", events); renderLog(); };
   $("devId").value = cfg.devId; $("broker").value = cfg.broker;
   $("saveSettings").onclick = () => {
     cfg = { devId: $("devId").value.trim() || DEFAULTS.devId, broker: $("broker").value.trim() || DEFAULTS.broker };
-    store.set("sfos.cfg", cfg); toast("Saved — reconnecting"); connect();
+    store.set("sfos.cfg", cfg); toast("Saved – reconnecting"); connect();
   };
 
-  // ---------- install (PWA) ----------
   let deferred = null;
   window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferred = e; $("installBtn").style.display = "inline-block"; });
   $("installBtn").onclick = async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("installBtn").style.display = "none"; };
   window.addEventListener("appinstalled", () => toast("Fridge OS installed"));
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(e => console.warn("SW", e));
 
-  updateNotifBtn(); renderLog(); connect();
+  // Sunday: one weekly-report alert per week
+  setInterval(() => {
+    const now = new Date();
+    if (now.getDay() === 0 && now.getHours() >= 10 && hist && store.get("sfos.reportDay", "") !== iso(now)) {
+      store.set("sfos.reportDay", iso(now));
+      notify("📋 Weekly fridge report", "See how this week went – opens, time open and your score.", "report");
+    }
+  }, 60000);
+
+  updateNotifBtn(); renderLog(); renderNotes(); connect();
+  showTab(store.get("sfos.tab", "home"));
+  if (joinedShared) toast("Connected to the shared fridge");
   setInterval(render, 250);
 })();
 </script>
